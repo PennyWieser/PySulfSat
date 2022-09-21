@@ -9,11 +9,61 @@ from scipy.special import erf
 
 df_ideal_liq = pd.DataFrame(columns=['SiO2_Liq', 'TiO2_Liq', 'Al2O3_Liq',
 'FeOt_Liq', 'MnO_Liq', 'MgO_Liq', 'CaO_Liq', 'Na2O_Liq', 'K2O_Liq',
-'Cr2O3_Liq', 'P2O5_Liq', 'H2O_Liq', 'Fe3Fet_Liq', 'Ni_Liq_ppm', 'Cu_Liq_ppm'])
+'P2O5_Liq', 'H2O_Liq', 'Fe3Fet_Liq', 'Ni_Liq_ppm', 'Cu_Liq_ppm'])
 
-def import_data(filename, sheet_name, sample_label=None, suffix=None):
+def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, sample_label=None, suffix=None):
     if 'csv' in filename:
         my_input = pd.read_csv(filename)
+
+    if Petrolog is True:
+
+        df=pd.read_excel(filename, sheet_name='Petrolog_Output_FRAC')
+        df.columns= df.columns.str.replace(' ','',regex=True)
+        df.columns= df.columns.str.replace('_melt','_Liq',regex=True)
+        if sum(df.columns.str.contains('Ni_Liq'))>0:
+            df['Ni_Liq_ppm']=df['Ni_Liq']
+        else:
+            df['Ni_Liq_ppm']=df['Ni_Liq']
+            print('We didnt find a Ni column in your Petrolog input')
+
+        if sum(df.columns.str.contains('Cu_Liq'))>0:
+            df['Cu_Liq_ppm']=df['Cu_Liq']
+        else:
+            df['Cu_Liq_ppm']=df['Cu_Liq']
+            print('We didnt find a Ni column in your Petrolog input')
+
+        df['FeOt_Liq']=df['FeO_Liq']+df['Fe2O3_Liq']*0.89998
+        df['Fe3Fet_Liq']=1-(df['FeO_Liq']/df['FeOt_Liq'])
+        df['T_K']=df['Temperature']+273.15
+        df['P_kbar']=df['Pressure(kbar)']
+        my_input=df
+
+
+    elif MELTS is True:
+        df=pd.read_table(filename, sep=',')
+        df.columns=df.columns.str.replace('wt% ','',regex=True)
+        df2=df.rename(columns={
+                                'SiO2': 'SiO2_Liq',
+                                'TiO2': 'TiO2_Liq',
+                                'CaO': 'CaO_Liq',
+                                'Al2O3': 'Al2O3_Liq',
+                                'FeO': 'FeO_Liq',
+                                'Fe2O3': 'Fe2O3_Liq',
+                                'Cr2O3': 'Cr2O3_Liq',
+                                'MnO': 'MnO_Liq',
+                                'MgO': 'MgO_Liq',
+                                'NiO': 'NiO_Liq',
+                                'Na2O': 'Na2O_Liq',
+                                'K2O': 'K2O_Liq',
+                                'P2O5': 'P2O5_Liq',
+                                'H2O': 'H2O_Liq'
+                                })
+
+        df2['FeOt_Liq']=df2['FeO_Liq']+df2['Fe2O3_Liq']*0.89998
+        df2['Fe3Fet_Liq']=1-(df2['FeO_Liq']/df2['FeOt_Liq'])
+        df2['T_K']=df2['T (C)']+273.15
+        df2['P_kbar']=df2['P (kbars)']
+        my_input=df2
 
     elif 'xls' in filename:
         if sheet_name is not None:

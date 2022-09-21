@@ -201,10 +201,13 @@ Ni_Liq=None, Cu_Liq=None):
             liqs['Fe_FeNiCu_Sulf_calc']=Fe_FeNiCu_Sulf_calc
             Fe_FeNiCu_Sulf=Fe_FeNiCu_Sulf_calc
 
-    if Fe_Sulf is not None and Ni_Sulf is not None and Cu_Sulf is not None:
+    elif Fe_Sulf is not None and Ni_Sulf is not None and Cu_Sulf is not None:
             Fe_FeNiCu_Sulf_calc=calculate_sulf_FeFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
             Cu_FeNiCu_Sulf_calc=calculate_sulf_CuFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
             Ni_FeNiCu_Sulf_calc=calculate_sulf_NiFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+
+    else:
+        Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf
 
 
 
@@ -217,7 +220,11 @@ Ni_Liq=None, Cu_Liq=None):
 
     liqs['DeltaG']=((137778-91.666*T_K+8.474*T_K*np.log(T_K))/(8.31441*T_K)+(-291*(P_kbar/10)+351*erf((P_kbar/10)))/T_K)
 
-    liqs['Ln_a_FeS']=(np.log(Fe_FeNiCu_Sulf*(1-liqs['Fe2_Liq_cat_frac'])))
+    # print('Cation fractions')
+    # print()
+
+
+    liqs['Ln_a_FeS']=(np.log(Fe_FeNiCu_Sulf_calc.astype(float)*(1-liqs['Fe2_Liq_cat_frac'])))
 
     liqs['Ln_a_FeO']=( np.log(liqs['Fe2_Liq_cat_frac'])+(((1-liqs['Fe2_Liq_cat_frac'])**2)*
             (28870-14710*liqs['Mg_Liq_cat_frac']+1960*liqs['Ca_Liq_cat_frac']+43300*liqs['Na_Liq_cat_frac']+95380*liqs['K_Liq_cat_frac']-76880*liqs['Ti_Liq_cat_frac'])
@@ -856,6 +863,8 @@ Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=No
 
     elif Fe_FeNiCu_Sulf is not None:
         print('Using inputted Fe_FeNiCu_Sulf ratio for calculations.')
+        Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf
+        Cu_FeNiCu_Sulf_calc =None
 
     elif Fe_Sulf is not None and Ni_Sulf is not None and Cu_Sulf is not None:
         print('Using inputted Sulf compositions to calculate Fe_FeNiCu_Sulf ratios.')
@@ -939,7 +948,7 @@ Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=No
     Smythe_calcs['SCSS_ideal_ppm_Smythe2017_1sigma']=Smythe_calcs['SCSS_ideal_ppm_Smythe2017']*0.273169775211857
     Smythe_calcs['T_Input_K']=T_K
     Smythe_calcs['P_Input_kbar']=P_kbar
-    Smythe_calcs['Fe_FeNiCu_Sulf_calc']=Fe_FeNiCu_Sulf_calc
+    Smythe_calcs['Fe_FeNiCu_Sulf']=Fe_FeNiCu_Sulf_calc
     Smythe_calcs['Fe3Fet_Liq_input']=Fe3Fet_Liq
 
 
@@ -955,7 +964,7 @@ Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=No
 
         cols_to_move = ['SCSS_ideal_ppm_Smythe2017', 'SCSS_ideal_ppm_Smythe2017_1sigma',
         'SCSS_non_ideal_ppm_Smythe2017', 'SCSS_non_ideal_ppm_Smythe2017_1sigma',
-        'T_Input_K', "P_Input_kbar",'Fe_FeNiCu_Sulf_calc', 'Fe3Fet_Liq_input']
+        'T_Input_K', "P_Input_kbar",'Fe_FeNiCu_Sulf', 'Fe3Fet_Liq_input']
 
     else:
         print('You havent entered a value for Ni_FeNiCu_Sulf and Cu_FeNiCu_Sulf so we cant calculate the non-ideal SCSS')
