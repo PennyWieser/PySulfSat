@@ -209,6 +209,11 @@ Ni_Liq=None, Cu_Liq=None):
     else:
         Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf
 
+    if isinstance(Fe_FeNiCu_Sulf_calc, float) is True:
+        Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf_calc
+    else:
+        Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf_calc.astype(float)
+
 
 
 
@@ -224,7 +229,7 @@ Ni_Liq=None, Cu_Liq=None):
     # print()
 
 
-    liqs['Ln_a_FeS']=(np.log(Fe_FeNiCu_Sulf_calc.astype(float)*(1-liqs['Fe2_Liq_cat_frac'])))
+    liqs['Ln_a_FeS']=(np.log(Fe_FeNiCu_Sulf_calc*(1-liqs['Fe2_Liq_cat_frac'])))
 
     liqs['Ln_a_FeO']=( np.log(liqs['Fe2_Liq_cat_frac'])+(((1-liqs['Fe2_Liq_cat_frac'])**2)*
             (28870-14710*liqs['Mg_Liq_cat_frac']+1960*liqs['Ca_Liq_cat_frac']+43300*liqs['Na_Liq_cat_frac']+95380*liqs['K_Liq_cat_frac']-76880*liqs['Ti_Liq_cat_frac'])
