@@ -6,7 +6,279 @@ import scipy.optimize as optimize
 from scipy.special import erf
 
 
+
 from PySulfSat.core_calcs import *
+
+## Li and Zhang 2022
+df_ideal_liq_lizhang = pd.DataFrame(columns=['SiO2_Liq', 'TiO2_Liq', 'Al2O3_Liq',
+'FeOt_Liq', 'MnO_Liq', 'MgO_Liq', 'CaO_Liq', 'Na2O_Liq', 'K2O_Liq',
+'P2O5_Liq'])
+
+def norm_liqs_excl_H2O(Liqs):
+    Liqs_c=Liqs.copy()
+    Liqs_c=Liqs_c.fillna(0)
+    Liqs2=Liqs_c.reindex(
+        df_ideal_liq_lizhang.columns, axis=1).fillna(0)
+
+    sum_rows=Liqs2.sum(axis=1)
+
+    Liqs_norm=Liqs2.divide(sum_rows/100, axis='rows')
+    return Liqs_norm
+
+
+
+def calculate_Li_Zhang_2022_SCSS(*, df, T_K, P_kbar, H2O_Liq=None, Fe_FeNiCu_Sulf=None, Fe3Fet_Liq=None, logfo2=None,
+Ni_Liq=None, Cu_Liq=None):
+
+    '''
+    Calculates SCSS using the model of Li and Zhang (2022), with options for users to
+    calculate sulfide composition from liquid composition using the approach of Smythe et al. (2017),
+    the empirical parameterization of O'Neill (2021), or input a sulfide composition.
+
+    Parameters
+    -------
+    df: pandas.DataFrame
+        Dataframe of liquid compositions. Needs to have the headings "SiO2_Liq", "TiO2_Liq" etc, with
+        compositions in oxide wt%. all FeO should be entered as FeOt_Liq, which can then be partitioned
+        using the Fe3Fet_Liq input. Heading order doesn't matter.
+
+    T_K: int, float, pandas.Series
+        Temperature in Kelvin.
+
+    P_kbar: int, float, pandas.Series
+        Pressure in kbar
+
+    logfo2: int, float, or pandas.Series
+        logfo2, used to convert to Fe3 following the method of Li and Zhang (2022)
+
+    Fe3Fet_Liq: int, float, pandas.Series, or "Calc_ONeill"
+        Proportion of Fe3+ in the liquid, as various parts of the calculation use only Fe2.
+        If "Calc_ONeill" Calculates as a function of MgO content, using the MORB relationship.
+
+    Sulfide Composition: Options to calculate from the liquid composition, enter the comp in el wt%,
+    or enter the Fe_FeNiCu_Sulf, Cu
+
+      if you want to calculate sulfide composition:
+
+            Fe_FeNiCu_Sulf = "Calc_Smythe"
+            Calculates sulfide composition analagous to the Solver function in the Smythe et al. (2017) spreadsheet.
+            Here, we use Scipy optimize to find the ideal Ni and Cu
+            contents using Kds from Kiseeva et al. (2015) and the Ni and Cu content of the melt.
+            Requires user to also enter Ni_Liq and Cu_Liq.
+
+            Or
+
+            Fe_FeNiCu_Sulf = "Calc_ONeill"
+            Calculates sulfide composition using the empirical expression of O'Neill (2021), which depends on
+            FeOt_Liq, Ni_Liq, Cu_Liq, and Fe3Fet_Liq. We allow users to enter their own Fe3Fet_Liq,
+            as we believe the empirical model of Neill where Fe3Fet_Liq is a function of MgO content is not
+            broadly applicable.
+
+        if you want to input a Fe_FeNiCu_Sulf ratio:
+            Fe_FeNiCu_Sulf = int, float, pandas series
+            Calculates SCSS using this ratio.
+            If you want the non-ideal SCSS to be returned, you also need to enter
+            values for Cu_FeNiCu_Sulf and Ni_FeNiCu_Sulf
+
+        if you want to input a measured sulfide composition in el wt%
+            Fe_Sulf, Ni_Sulf, Cu_Sulf = int, float, pandas series
+
+
+
+
+    Returns
+    -------
+    pandas.DataFrame:
+        Contains column for SCSS ideal, and user inputted dataframe
+
+    '''
+
+
+
+    T_K=T_K-0.15 # As they use 273, not 273.15 for their conversion
+
+    Liqs=df.copy()
+
+    if H2O_Liq is not None:
+        Liqs['H2O_Liq']=H2O_Liq
+
+    Liqs_norm=norm_liqs_excl_H2O(Liqs)
+
+    moles=calculate_anhydrous_mol_proportions_liquid(liq_comps=Liqs_norm)
+    mol_frac=calculate_anhydrous_mol_fractions_liquid(liq_comps=Liqs_norm)
+
+    # Cation calculations
+
+    if logfo2 is not None:
+        logfo2=Liqs['logfO2']
+
+        logXFe2O3XFeO=(0.196*logfo2/0.4343+11492/(T_K)-6.675-2.243*mol_frac['Al2O3_Liq_mol_frac']
+                    -1.828*mol_frac['FeOt_Liq_mol_frac']+3.201*mol_frac['CaO_Liq_mol_frac']
+                    +5.854*mol_frac['Na2O_Liq_mol_frac']+6.215*mol_frac['K2O_Liq_mol_frac']
+                    -3.36*(1-1673/(T_K)-np.log((T_K)/1673))-0.0701*(P_kbar*1000)/(T_K)
+                    -0.0000154*(P_kbar*1000)/(T_K)*(T_K-1673)+0.000000385*(P_kbar*1000)**2/(T_K))
+        FeO_mol_frac=mol_frac['FeOt_Liq_mol_frac']/(1+2*np.exp(logXFe2O3XFeO))
+        Fe2O3_mol_frac=mol_frac['FeOt_Liq_mol_frac']/(1+2*np.exp(logXFe2O3XFeO))*np.exp(logXFe2O3XFeO)
+
+        mol_cat=pd.DataFrame(data={'Si_cat': moles['SiO2_Liq_mol_prop'],
+                            'Ti_cat': moles['TiO2_Liq_mol_prop'],
+                                'Al_cat': 2*moles['Al2O3_Liq_mol_prop'],
+                            'Fe_cat':moles['FeOt_Liq_mol_prop']/(1+2*np.exp(logXFe2O3XFeO)),
+                            'Mn_cat': moles['MnO_Liq_mol_prop'],
+                            'Mg_cat': moles['MgO_Liq_mol_prop'],
+                            'Ca_cat': moles['CaO_Liq_mol_prop'],
+                            'Na_cat':2* moles['Na2O_Liq_mol_prop'],
+                            'K_cat': 2* moles['K2O_Liq_mol_prop'],
+                            'P_cat': 2* moles['P2O5_Liq_mol_prop'],
+                            'H_cat': 0,
+                            'Fe3_cat':moles['FeOt_Liq_mol_prop']/(1+2*np.exp(logXFe2O3XFeO))*2*np.exp(logXFe2O3XFeO) })
+
+    if Fe3Fet_Liq is not None:
+        mol_cat=pd.DataFrame(data={'Si_cat': moles['SiO2_Liq_mol_prop'],
+                            'Ti_cat': moles['TiO2_Liq_mol_prop'],
+                            'Al_cat': 2*moles['Al2O3_Liq_mol_prop'],
+                            'Fe_cat':moles['FeOt_Liq_mol_prop']*(1-Fe3Fet_Liq),
+                            'Mn_cat': moles['MnO_Liq_mol_prop'],
+                            'Mg_cat': moles['MgO_Liq_mol_prop'],
+                            'Ca_cat': moles['CaO_Liq_mol_prop'],
+                            'Na_cat':2* moles['Na2O_Liq_mol_prop'],
+                            'K_cat': 2* moles['K2O_Liq_mol_prop'],
+                            'P_cat': 2* moles['P2O5_Liq_mol_prop'],
+                            'H_cat': 0,
+                            'Fe3_cat':moles['FeOt_Liq_mol_prop']*Fe3Fet_Liq})
+
+
+    sum_mol_cat=mol_cat.sum(axis=1)
+    mol_cat_norm=mol_cat.divide(sum_mol_cat, axis='rows')
+
+    Fe3Fet_Liq=mol_cat_norm['Fe3_cat']/(mol_cat_norm['Fe_cat']+mol_cat_norm['Fe3_cat'])
+
+    # print('Fe3_cat')
+    # print(mol_cat_norm['Fe3_cat'])
+    # print('Fe_cat')
+    # print(mol_cat_norm['Fe_cat'])
+
+
+    # Sulfide composition bit
+
+
+    if isinstance(Fe_FeNiCu_Sulf, str):
+        if Fe_FeNiCu_Sulf=="Calc_Smythe":
+
+
+            # This does the Scipy minimisation of Cu and Ni contents using Kiseeva et al. (2015)
+            calc_sulf=calculate_Symthe_sulf_minimisation(FeOt_Liq=Liqs['FeOt_Liq'], Fe3Fet_Liq=Fe3Fet_Liq,
+                                            T_K=T_K, Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq)
+
+            # This feeds those result back into a simpler function to get the Fe, S and O content of the sulfide
+            Sulf_All=calculate_Kiseeva_sulf_comp_kd(Ni_Sulf=calc_sulf['Ni_Sulf'],Cu_Sulf=calc_sulf['Cu_Sulf'],
+                                FeOt_Liq=df['FeOt_Liq'], Fe3Fet_Liq=Fe3Fet_Liq,
+                                            T_K=T_K)
+
+            Fe_FeNiCu_Sulf_calc=calculate_sulf_FeFeNiCu(Sulf_All['Ni_Sulf'], Sulf_All['Cu_Sulf'], Sulf_All['Fe_Sulf'])
+
+        if Fe_FeNiCu_Sulf=="Calc_ONeill":
+            Fe_FeNiCu_Sulf_calc=calculate_ONeill_sulf(FeOt_Liq=df['FeOt_Liq'],
+            Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, Fe3Fet_Liq=Fe3Fet_Liq)
+    else:
+        Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf
+        #print('replaced')
+
+
+
+
+
+
+
+    NaKAl=mol_cat_norm['Na_cat']+mol_cat_norm['K_cat']-mol_cat_norm['Al_cat']
+    DeltaGRT=(137778-91.666*(T_K)+8.474*(T_K)*np.log(T_K))/8.314/(T_K)
+
+    SumXMAM=(1673/(T_K)*(6.7*(mol_cat_norm['Na_cat']+mol_cat_norm['K_cat'])
+    +1.8*(mol_cat_norm['Al_cat']+mol_cat_norm['Fe3_cat'])+4.9*mol_cat_norm['Mg_cat']
+    +8.1*mol_cat_norm['Ca_cat']+5*mol_cat_norm['Ti_cat']+8.9*(mol_cat_norm['Fe_cat']
+    +mol_cat_norm['Mn_cat'])-22.2*(mol_cat_norm['Fe_cat']+
+    mol_cat_norm['Mn_cat'])*mol_cat_norm['Ti_cat']+7.2*(mol_cat_norm['Fe_cat']
+    +mol_cat_norm['Mn_cat'])*mol_cat_norm['Si_cat'])-2.06*erf(-7.2*(mol_cat_norm['Fe_cat']
+    +mol_cat_norm['Mn_cat'])))
+
+    lnCs=-23590/(T_K)+8.77+SumXMAM
+    lnXFeO=-np.log(mol_cat_norm['Fe_cat'])
+    LnrFeO=-((1-mol_cat_norm['Fe_cat'])**2*(28870-14710*mol_cat_norm['Mg_cat']
+    +1960*mol_cat_norm['Ca_cat']+43300*mol_cat_norm['Na_cat']+95380*mol_cat_norm['K_cat']
+    -76880*mol_cat_norm['Ti_cat'])+(1-mol_cat_norm['Fe_cat'])*(-62190*mol_cat_norm['Si_cat']
+    +31520*mol_cat_norm['Si_cat']**2))/8.314/(T_K)
+    # Need to sort out for low T<1200 C these two flip
+
+
+    lnaFeS_lowT=-(31464-(T_K)*21.506)/8.314/(T_K)+np.log(Fe_FeNiCu_Sulf_calc)
+    lnaFeS_HighT=np.log(1-mol_cat_norm['Fe_cat'])+np.log(Fe_FeNiCu_Sulf_calc)
+    lnaFeS=lnaFeS_HighT
+    lnaFeS[T_K<(1200+273)] =lnaFeS_lowT
+
+    C1PC2erf_lowT=(-0.0291*(P_kbar)*1000+351*erf((P_kbar)*1000/10000))/(T_K)+0.04*(P_kbar)*1000/8.314/(T_K)
+    C1PC2erf_highT=(-0.0291*(P_kbar)*1000+351*erf((P_kbar)*1000/10000))/(T_K)
+
+    C1PC2erf=C1PC2erf_highT
+    C1PC2erf[T_K<(1200+273)] =C1PC2erf_lowT
+
+    lnS=DeltaGRT+lnCs+lnXFeO+LnrFeO+lnaFeS+C1PC2erf
+
+    S2_calc=np.exp(lnS)
+    S2_calc[(Liqs['FeOt_Liq']<5)&(Liqs['H2O_Liq']>0)]=0
+
+    SumMoles_H2O=(moles['FeOt_Liq_mol_prop']+moles['MnO_Liq_mol_prop']+moles['MgO_Liq_mol_prop']
+                +moles['CaO_Liq_mol_prop']+moles['Na2O_Liq_mol_prop']+moles['K2O_Liq_mol_prop'])
+    XH2Ot=(Liqs['H2O_Liq']/18)/(Liqs['H2O_Liq']/18+(moles['SiO2_Liq_mol_prop']*2+moles['TiO2_Liq_mol_prop']*2+
+    moles['Al2O3_Liq_mol_prop']*3+SumMoles_H2O+moles['P2O5_Liq_mol_prop']*5)*(100-Liqs['H2O_Liq'])/100)
+
+
+    lnXH2Ot=np.log(XH2Ot)
+    KOH=np.exp(2.6*mol_cat_norm['Si_cat']-4339*mol_cat_norm['Si_cat']/(T_K))
+    XOH=(0.5-(0.25-(KOH-4)/KOH*(XH2Ot-XH2Ot**2))**0.5)/(KOH-4)*2*KOH
+    lnXOH=np.log(XOH)
+    XH2Om=XH2Ot-0.5*XOH
+    lnXH2Om=np.log(XH2Om)
+    lnXOH_XH2O=np.log(XOH+lnXH2Om)
+
+    lnCHScalc=-19748*(1/T_K)+7.81+SumXMAM+lnXOH_XH2O
+
+    HScal=(np.exp(DeltaGRT+lnCHScalc+lnXFeO+LnrFeO+lnaFeS+C1PC2erf))/(100+Liqs['H2O_Liq'])*100
+
+    # If NaKAl>-0.015
+    NaKAlterm=(1673/(T_K))*(19.634*NaKAl+0.2542)
+    #Else
+    LowNaKAl= NaKAl<-0.015
+    NaKAlterm[LowNaKAl] =(1673/(T_K))*(26.365*NaKAl+0.9587)
+
+    # If NaKAlterm>0
+    lnCHS_NKA_term=lnCHScalc+NaKAlterm
+    # Else
+    lnCHS_NKA_term[NaKAlterm<=0]=lnCHScalc
+
+    HScal2=(np.exp(DeltaGRT+lnCHS_NKA_term+lnXFeO+LnrFeO+lnaFeS+C1PC2erf))/(100+Liqs['H2O_Liq'])*100
+    # If H2O>0
+
+    # If HScal2>HScal
+    Stot_calc_H2O=HScal2+S2_calc
+    #If HScal2<=HScal
+    calc2gcal=HScal2>HScal
+    Stot_calc_H2O[~calc2gcal]=HScal+S2_calc
+
+    # If H2O=0
+    noH2O=~(Liqs['H2O_Liq']>0)
+    Stot_calc_H2O[noH2O]=S2_calc
+
+    Liqs.insert(0, 'SCSS_Tot', Stot_calc_H2O)
+    Liqs.insert(1, 'Fe_FeNiCu_Sulf', Fe_FeNiCu_Sulf_calc)
+    if any(Liqs.columns.str.contains('Fe3Fet_Liq')):
+        if Fe3Fet_Liq is not None:
+            print('replacing Fe3Fet_Liq in the original dataframe with that input into the function')
+            Liqs['Fe3Fet_Liq']=Fe3Fet_Liq
+
+    else:
+        Liqs.insert(2, 'Fe3Fet_Liq', Fe3Fet_Liq)
+    return Liqs
+
 
 
 ## Fortin et al. (2015) SCSS Calculation
@@ -137,7 +409,7 @@ Ni_Liq=None, Cu_Liq=None):
     '''
     df_c=df.copy()
     # if 'P2O5_Liq' in df_c.columns:
-    #     df_c['P2O5_Liq']=0
+    df_c['P2O5_Liq']=0 # Doesnt have P2O5 in the input
     liqs=calculate_anhydrous_cat_fractions_liquid(liq_comps=df_c)
 
     if isinstance(Fe3Fet_Liq, str) and Fe3Fet_Liq == "Calc_ONeill":
@@ -309,6 +581,7 @@ def Loop_Smythe_sulf_calc_residual(single_argx0, FeO_Liq, T_K,  Ni_Liq, Cu_Liq):
 
     S_Sulf=((100-AL17-AL18-(O_Sulf*77.72983506/22.27016494)
              -O_Sulf-Cu_Sulf-Ni_Sulf)*36.47119049/100 + AL17 + AL18)
+
 
     Fe_Sulf=((100-Ni_Sulf-Cu_Sulf-O_Sulf-AL17-AL18-AM20)
     *(63.52880951/100)+O_Sulf*77.72983506/22.27016494)

@@ -13,12 +13,12 @@ from scipy.special import erf
 oxide_mass_liq_anhyd = {'SiO2_Liq': 60.0843, 'MgO_Liq': 40.3044,
 'MnO_Liq': 70.9375, 'FeOt_Liq': 71.8464, 'CaO_Liq': 56.0774,
 'Al2O3_Liq': 101.961, 'Na2O_Liq': 61.9789, 'K2O_Liq': 94.196,
-'TiO2_Liq': 79.8788}
+'TiO2_Liq': 79.8788, 'P2O5_Liq': 141.944522 }
 
 
 cation_num_liq_anhyd = {'SiO2_Liq': 1, 'MgO_Liq': 1, 'MnO_Liq': 1,
 'FeOt_Liq': 1, 'CaO_Liq': 1, 'Al2O3_Liq': 2, 'Na2O_Liq': 2,
-'K2O_Liq': 2, 'TiO2_Liq': 1}
+'K2O_Liq': 2, 'TiO2_Liq': 1, 'P2O5_Liq': 2}
 
 
 # Turns dictionary into a dataframe so pandas matrix math functions can be used
