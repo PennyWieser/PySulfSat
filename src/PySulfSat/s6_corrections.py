@@ -77,5 +77,41 @@ def calculate_S6St_Nash2019(T_K, Fe3Fet_Liq):
     return S6St
 
 
+def calculate_S_Tot_Kleinsasser2022_dacite(*, SCSS2=None,  SCAS=None, deltaFMQ=None):
+    """ Calculates SCSS total as a function of S2- and S6+ in dacitic melts,
+    following Kleinsasser et al. 2022"""
+
+    if SCSS2 is not None:
+        SCSS_Tot=SCSS2*(1+10**(2*deltaFMQ-3.05))
+        return SCSS_Tot
+    if SCAS is not None:
+        SCAS_Tot=SCAS*(1+np.exp(1.26-2*deltaFMQ))
+        return SCAS_Tot
+
+
+
+def calculate_S_Tot_Jugo2010(*, SCSS2=None,  SCAS=None,DeltaQFM):
+    '''Calculates S total as a function of S2- and S6+
+    following Jugo et al. 2010 for given SCSS or SCAS
+
+    Parameters
+    -----------
+    DeltaQFM: int, float, pandas.Series
+        Offset from the QFM buffer in log units.
+
+    Returns
+    -----------
+    float, pandas.Series
+        Proportion of S6+ in the liquid
+
+    '''
+    if SCSS2 is not None:
+        SCSS_Tot=SCSS2*(1+10**(2*deltaFMQ-2.1))
+        return SCSS_Tot
+
+        SCAS_Tot=SCAS*(1+np.exp(2.89-2.23*deltaFMQ))
+        return SCAS_Tot
+
+
 
 

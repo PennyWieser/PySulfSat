@@ -17,6 +17,8 @@ from PySulfSat.import_data import *
 from PySulfSat.scss_calcs2 import *
 # This has stuff for performing s6+ corrections
 from PySulfSat.s6_corrections import *
+from PySulfSat.scas_calc import *
+from PySulfSat.sulf_mass_balance import *
 
 #from PySCSS.SCSS import *
 # version

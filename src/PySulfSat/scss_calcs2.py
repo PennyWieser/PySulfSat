@@ -27,7 +27,7 @@ def norm_liqs_excl_H2O(Liqs):
 
 
 
-def calculate_Li_Zhang_2022_SCSS(*, df, T_K, P_kbar, H2O_Liq=None, Fe_FeNiCu_Sulf=None, Fe3Fet_Liq=None, logfo2=None,
+def calculate_LZ2022_SCSS(*, df, T_K, P_kbar, H2O_Liq=None, Fe_FeNiCu_Sulf=None, Fe3Fet_Liq=None, logfo2=None,
 Ni_Liq=None, Cu_Liq=None):
 
     '''
@@ -283,7 +283,7 @@ Ni_Liq=None, Cu_Liq=None):
 
 ## Fortin et al. (2015) SCSS Calculation
 
-def calculate_Fortin2015_SCSS(df, T_K, P_kbar):
+def calculate_F2015_SCSS(*, df, T_K, P_kbar, H2O_Liq=None):
     '''
     Calculates SCSS using the model of Fortin et al. (2015).
     Unlike the models of Symthe et al. (2017) or O'Neill (2021) this model doesn't
@@ -311,6 +311,8 @@ def calculate_Fortin2015_SCSS(df, T_K, P_kbar):
     '''
 
     df_c=df.copy()
+    if H2O_Liq is not None:
+        df_c['H2O_Liq']=H2O_Liq
     mol_fracs=ss.calculate_hydrous_mol_fractions_liquid(df_c)
     Ln_SCSS_Calc=(34.7837+(1/T_K*-5772.322)+
 ((P_kbar/10)/T_K*-346.5377)+
@@ -344,7 +346,7 @@ def calculate_ONeill_sulf(FeOt_Liq, Ni_Liq, Cu_Liq, MgO_Liq=None, Fe3Fet_Liq=Non
     return Fe_FeNiCu
 
 
-def calculate_ONeill2021_SCSS(*, df, T_K, P_kbar, Fe3Fet_Liq=None, Fe_FeNiCu_Sulf=None,
+def calculate_O2021_SCSS(*, df, T_K, P_kbar, Fe3Fet_Liq=None, Fe_FeNiCu_Sulf=None,
 Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=None,
 Ni_Liq=None, Cu_Liq=None):
 
@@ -408,6 +410,8 @@ Ni_Liq=None, Cu_Liq=None):
 
     '''
     df_c=df.copy()
+
+
     # if 'P2O5_Liq' in df_c.columns:
     df_c['P2O5_Liq']=0 # Doesnt have P2O5 in the input
     liqs=calculate_anhydrous_cat_fractions_liquid(liq_comps=df_c)
@@ -1062,7 +1066,7 @@ def calculate_sulf_NiFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf):
     return NiFeNiCu
 ## Smythe Parameterization
 
-def calculate_Smythe2017_SCSS(*, df, T_K, P_kbar, Fe3Fet_Liq=None, Fe_FeNiCu_Sulf=None,
+def calculate_S2017_SCSS(*, df, T_K, P_kbar, Fe3Fet_Liq=None, Fe_FeNiCu_Sulf=None,
 Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=None, Ni_Liq=None, Cu_Liq=None):
     '''
     Calculates SCSS using the model of Smythe et al. (2017), with options for users to
@@ -1138,8 +1142,12 @@ Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=No
         if Cu_Liq is None:
             raise ValueError('If you select Fe_FeNiCu_Sulf = Calc, you need to enter the concentration of Cu and Ni in the liquid in ppm')
 
+    elif Cu_FeNiCu_Sulf is not None and Ni_FeNiCu_Sulf is not None and Fe_FeNiCu_Sulf is not None:
+        Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf
+        Cu_FeNiCu_Sulf_calc=Cu_FeNiCu_Sulf
+        Ni_FeNiCu_Sulf_calc=Ni_FeNiCu_Sulf
 
-    elif Fe_FeNiCu_Sulf is not None:
+    elif Fe_FeNiCu_Sulf is not None and Cu_FeNiCu_Sulf is None and Ni_FeNiCu_Sulf is None:
         print('Using inputted Fe_FeNiCu_Sulf ratio for calculations.')
         Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf
         Cu_FeNiCu_Sulf_calc =None
@@ -1150,8 +1158,15 @@ Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=No
     else:
         raise ValueError('Input for sulfide composition not recognised.')
 
+    if Fe_Sulf is not None and Ni_Sulf is not None and Cu_Sulf is not None:
 
-    if isinstance(Fe_FeNiCu_Sulf, str):
+        Fe_FeNiCu_Sulf_calc=calculate_sulf_FeFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+        Cu_FeNiCu_Sulf_calc=calculate_sulf_CuFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+        Ni_FeNiCu_Sulf_calc=calculate_sulf_NiFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+
+
+
+    elif isinstance(Fe_FeNiCu_Sulf, str):
         if Fe_FeNiCu_Sulf=="Calc_Smythe":
 
 
@@ -1174,15 +1189,12 @@ Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=No
             Smythe_calcs['O_Sulf_Calc']=Sulf_All['O_Sulf']
             Smythe_calcs['S_Sulf_Calc']=Sulf_All['S_Sulf']
 
-        if isinstance(Fe_FeNiCu_Sulf, str) and Fe_FeNiCu_Sulf=="Calc_ONeill":
+        elif isinstance(Fe_FeNiCu_Sulf, str) and Fe_FeNiCu_Sulf=="Calc_ONeill":
             Fe_FeNiCu_Sulf_calc=calculate_ONeill_sulf(FeOt_Liq=df_c['FeOt_Liq'],
             Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, Fe3Fet_Liq=Fe3Fet_Liq)
-            liqs['Fe_FeNiCu_Sulf_calc']=Fe_FeNiCu_Sulf_calc
-
-    if Fe_Sulf is not None and Ni_Sulf is not None and Cu_Sulf is not None:
-            Fe_FeNiCu_Sulf_calc=calculate_sulf_FeFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
-            Cu_FeNiCu_Sulf_calc=calculate_sulf_CuFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
-            Ni_FeNiCu_Sulf_calc=calculate_sulf_NiFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+            df_c['Fe_FeNiCu_Sulf_calc']=Fe_FeNiCu_Sulf_calc
+            Cu_FeNiCu_Sulf_calc=None
+            Ni_FeNiCu_Sulf_calc=None
 
 
 
