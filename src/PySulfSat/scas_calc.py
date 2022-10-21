@@ -81,8 +81,15 @@ def calculate_CD2019_SCAS(*, df, T_K, H2O_Liq=None):
     molesS=Xs*(sum_hyd_prop+Xs)
     SCAS=molesS*32.065
     SCASppm=SCAS*10000
-    df_c.insert(0, 'Calc SCAS (ppm)', SCASppm)
-    return df_c
+    # print(SCASppm)
+    # print(len(SCASppm))
+    out=pd.concat([df_c, hyd_prop, hyd_frac], axis=1)
+
+    out.insert(0, 'Calc SCAS (ppm)', SCASppm)
+    out.insert(1, 'lnXS', lnXS)
+    out.insert(2, 'Xs', Xs)
+    out.insert(3, 'molesS', molesS)
+    return out
 
 def calculate_ZT2022_SCAS(*, df, T_K, H2O_Liq=None):
     """" Calculates SCAS using the model of Zajacz and Tsay, 2022

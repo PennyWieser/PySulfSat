@@ -50,7 +50,7 @@ Welcome to Read the doc's documentation!
    :maxdepth: 2
    :caption: Integrating SCSS modelling/MI/Sulfide Chemistry
 
-   Examples/Data_Input/Sulf_Evolution_During_FC/Sulfide_sat_magma_evolution_Hawaii
+
    Examples/Data_Input/Sulf_Evolution_During_FC/Sulfide_sat_magma_evolution_Iceland
 
 
