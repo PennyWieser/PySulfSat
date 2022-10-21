@@ -14,41 +14,41 @@ Thermobar can be installed using pip in one line. If you are using a terminal, e
 
 .. code-block:: python
 
-   pip install PySCSS
+   pip install PySulfSat
 
 If you are using Jupyter Notebooks or Jupyter Lab, you can also install it by entering the following code into a notebook cell (note the !):
 
 .. code-block:: python
 
-   !pip install PySCSS
+   !pip install PySulfSat
 
-You then need to import PySCSS into the script you are running code in. In all the examples, we import Themobar as pt.:
+You then need to import PySulfSat into the script you are running code in. In all the examples, we import Themobar as pt.:
 
 .. code-block:: python
 
-   import PySCSS as ss
+   import PySulfSat as ss
 
-This means any time you want to call a function from PySCSS, you do ss.function_name.
+This means any time you want to call a function from PySulfSat, you do ss.function_name.
 
 
 
 Updating
 ========
 
-To upgrade to the most recent version of PySCSS, type the following into terminal:
+To upgrade to the most recent version of PySulfSat, type the following into terminal:
 
 .. code-block:: python
 
-   pip install PySCSS --upgrade
+   pip install PySulfSat --upgrade
 
 Or in your Jupyter environment:
 
 .. code-block:: python
 
-   !pip install Thermobar --upgrade
+   !pip install PySulfSat --upgrade
 
 
-For maximum reproducability, you should state which version of PySCSS you are using. If you have imported PySCSS as pt, you can find this using:
+For maximum reproducability, you should state which version of PySulfSat you are using. If you have imported PySulfSat as pt, you can find this using:
 
 .. code-block:: python
 
