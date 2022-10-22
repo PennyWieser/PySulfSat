@@ -20,7 +20,7 @@ from PySulfSat.s6_corrections import *
 from PySulfSat.scas_calc import *
 from PySulfSat.sulf_mass_balance import *
 
-#from PySCSS.SCSS import *
+
 # version
 from ._version import __version__
 

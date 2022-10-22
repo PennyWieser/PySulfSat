@@ -10,7 +10,7 @@ We recommend readers go through the associated notebooks for each of their tutor
 
 Why did we develop Thermobar
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-A short introduction to the motivation behind developing PySCSS.
+A short introduction to the motivation behind developing PySulfSat
 
 .. raw:: html
 

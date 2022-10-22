@@ -1,4 +1,4 @@
-.. PySCSS documentation master file, created by
+.. PySulfSat documentation master file, created by
    sphinx-quickstart on July 21
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.

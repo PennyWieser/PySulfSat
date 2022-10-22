@@ -1,6 +1,6 @@
 Sulfide Saturation Functions
 ======================
 
-.. automodule:: PySCSS.SCSS
+.. automodule:: PySulfSat.SCSS
    :members:
 
