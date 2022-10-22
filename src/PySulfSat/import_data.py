@@ -34,9 +34,10 @@ def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, sample_l
 
         df['FeOt_Liq']=df['FeO_Liq']+df['Fe2O3_Liq']*0.89998
         df['Fe3Fet_Liq']=1-(df['FeO_Liq']/df['FeOt_Liq'])
-        df['T_K']=df['Temperature']+273.15
-        df['P_kbar']=df['Pressure(kbar)']
-        my_input=df
+        df2=df.drop(['FeO_Liq', 'Fe2O3_Liq'], axis=1)
+        df2['T_K']=df2['Temperature']+273.15
+        df2['P_kbar']=df2['Pressure(kbar)']
+        my_input=df2
 
 
     elif MELTS is True:

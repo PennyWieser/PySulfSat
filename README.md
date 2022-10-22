@@ -4,5 +4,5 @@
 
 A python tool for PySCSSometry.
 Examples and documentation available at
-https://PySCSS.readthedocs.io/en/latest/index.html
+https://PySulfsat.readthedocs.io/en/latest/index.html
 Still a work in progress, contact Penny Wieser with questions.
