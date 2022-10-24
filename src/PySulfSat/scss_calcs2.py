@@ -95,7 +95,7 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
 
 
 
-    T_K=T_K-0.15 # As they use 273, not 273.15 for their conversion
+    T_K2=T_K-0.15 # As they use 273, not 273.15 for their conversion
 
     Liqs=df.copy()
 
@@ -110,13 +110,14 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
     # Cation calculations
 
     if logfo2 is not None:
-        logfo2=Liqs['logfO2']
+        logfo2=logfo2
 
-        logXFe2O3XFeO=(0.196*logfo2/0.4343+11492/(T_K)-6.675-2.243*mol_frac['Al2O3_Liq_mol_frac']
+
+        logXFe2O3XFeO=(0.196*logfo2/0.4343+11492/(T_K2)-6.675-2.243*mol_frac['Al2O3_Liq_mol_frac']
                     -1.828*mol_frac['FeOt_Liq_mol_frac']+3.201*mol_frac['CaO_Liq_mol_frac']
                     +5.854*mol_frac['Na2O_Liq_mol_frac']+6.215*mol_frac['K2O_Liq_mol_frac']
-                    -3.36*(1-1673/(T_K)-np.log((T_K)/1673))-0.0701*(P_kbar*1000)/(T_K)
-                    -0.0000154*(P_kbar*1000)/(T_K)*(T_K-1673)+0.000000385*(P_kbar*1000)**2/(T_K))
+                    -3.36*(1-1673/(T_K2)-np.log((T_K2)/1673))-0.0701*(P_kbar*1000)/(T_K2)
+                    -0.0000154*(P_kbar*1000)/(T_K2)*(T_K2-1673)+0.000000385*(P_kbar*1000)**2/(T_K2))
         FeO_mol_frac=mol_frac['FeOt_Liq_mol_frac']/(1+2*np.exp(logXFe2O3XFeO))
         Fe2O3_mol_frac=mol_frac['FeOt_Liq_mol_frac']/(1+2*np.exp(logXFe2O3XFeO))*np.exp(logXFe2O3XFeO)
 
@@ -168,12 +169,12 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
 
             # This does the Scipy minimisation of Cu and Ni contents using Kiseeva et al. (2015)
             calc_sulf=calculate_Symthe_sulf_minimisation(FeOt_Liq=Liqs['FeOt_Liq'], Fe3Fet_Liq=Fe3Fet_Liq,
-                                            T_K=T_K, Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, Ni_Sulf_init=Ni_Sulf_init, Cu_Sulf_init=Cu_Sulf_init)
+                                            T_K=T_K2, Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, Ni_Sulf_init=Ni_Sulf_init, Cu_Sulf_init=Cu_Sulf_init)
 
             # This feeds those result back into a simpler function to get the Fe, S and O content of the sulfide
             Sulf_All=calculate_Kiseeva_sulf_comp_kd(Ni_Sulf=calc_sulf['Ni_Sulf'],Cu_Sulf=calc_sulf['Cu_Sulf'],
                                 FeOt_Liq=df['FeOt_Liq'], Fe3Fet_Liq=Fe3Fet_Liq,
-                                            T_K=T_K)
+                                            T_K=T_K2)
 
             Fe_FeNiCu_Sulf_calc=calculate_sulf_FeFeNiCu(Sulf_All['Ni_Sulf'], Sulf_All['Cu_Sulf'], Sulf_All['Fe_Sulf'])
 
@@ -191,9 +192,9 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
 
 
     NaKAl=mol_cat_norm['Na_cat']+mol_cat_norm['K_cat']-mol_cat_norm['Al_cat']
-    DeltaGRT=(137778-91.666*(T_K)+8.474*(T_K)*np.log(T_K))/8.314/(T_K)
+    DeltaGRT=(137778-91.666*(T_K2)+8.474*(T_K2)*np.log(T_K2))/8.314/(T_K2)
 
-    SumXMAM=(1673/(T_K)*(6.7*(mol_cat_norm['Na_cat']+mol_cat_norm['K_cat'])
+    SumXMAM=(1673/(T_K2)*(6.7*(mol_cat_norm['Na_cat']+mol_cat_norm['K_cat'])
     +1.8*(mol_cat_norm['Al_cat']+mol_cat_norm['Fe3_cat'])+4.9*mol_cat_norm['Mg_cat']
     +8.1*mol_cat_norm['Ca_cat']+5*mol_cat_norm['Ti_cat']+8.9*(mol_cat_norm['Fe_cat']
     +mol_cat_norm['Mn_cat'])-22.2*(mol_cat_norm['Fe_cat']+
@@ -201,25 +202,25 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
     +mol_cat_norm['Mn_cat'])*mol_cat_norm['Si_cat'])-2.06*erf(-7.2*(mol_cat_norm['Fe_cat']
     +mol_cat_norm['Mn_cat'])))
 
-    lnCs=-23590/(T_K)+8.77+SumXMAM
+    lnCs=-23590/(T_K2)+8.77+SumXMAM
     lnXFeO=-np.log(mol_cat_norm['Fe_cat'])
     LnrFeO=-((1-mol_cat_norm['Fe_cat'])**2*(28870-14710*mol_cat_norm['Mg_cat']
     +1960*mol_cat_norm['Ca_cat']+43300*mol_cat_norm['Na_cat']+95380*mol_cat_norm['K_cat']
     -76880*mol_cat_norm['Ti_cat'])+(1-mol_cat_norm['Fe_cat'])*(-62190*mol_cat_norm['Si_cat']
-    +31520*mol_cat_norm['Si_cat']**2))/8.314/(T_K)
+    +31520*mol_cat_norm['Si_cat']**2))/8.314/(T_K2)
     # Need to sort out for low T<1200 C these two flip
 
 
-    lnaFeS_lowT=-(31464-(T_K)*21.506)/8.314/(T_K)+np.log(Fe_FeNiCu_Sulf_calc)
+    lnaFeS_lowT=-(31464-(T_K2)*21.506)/8.314/(T_K2)+np.log(Fe_FeNiCu_Sulf_calc)
     lnaFeS_HighT=np.log(1-mol_cat_norm['Fe_cat'])+np.log(Fe_FeNiCu_Sulf_calc)
     lnaFeS=lnaFeS_HighT
-    lnaFeS[T_K<(1200+273)] =lnaFeS_lowT
+    lnaFeS[T_K2<(1200+273)] =lnaFeS_lowT
 
-    C1PC2erf_lowT=(-0.0291*(P_kbar)*1000+351*erf((P_kbar)*1000/10000))/(T_K)+0.04*(P_kbar)*1000/8.314/(T_K)
-    C1PC2erf_highT=(-0.0291*(P_kbar)*1000+351*erf((P_kbar)*1000/10000))/(T_K)
+    C1PC2erf_lowT=(-0.0291*(P_kbar)*1000+351*erf((P_kbar)*1000/10000))/(T_K2)+0.04*(P_kbar)*1000/8.314/(T_K2)
+    C1PC2erf_highT=(-0.0291*(P_kbar)*1000+351*erf((P_kbar)*1000/10000))/(T_K2)
 
     C1PC2erf=C1PC2erf_highT
-    C1PC2erf[T_K<(1200+273)] =C1PC2erf_lowT
+    C1PC2erf[T_K2<(1200+273)] =C1PC2erf_lowT
 
     lnS=DeltaGRT+lnCs+lnXFeO+LnrFeO+lnaFeS+C1PC2erf
 
@@ -233,19 +234,19 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
 
 
     lnXH2Ot=np.log(XH2Ot)
-    KOH=np.exp(2.6*mol_cat_norm['Si_cat']-4339*mol_cat_norm['Si_cat']/(T_K))
+    KOH=np.exp(2.6*mol_cat_norm['Si_cat']-4339*mol_cat_norm['Si_cat']/(T_K2))
     XOH=(0.5-(0.25-(KOH-4)/KOH*(XH2Ot-XH2Ot**2))**0.5)/(KOH-4)*2*KOH
     lnXOH=np.log(XOH)
     XH2Om=XH2Ot-0.5*XOH
     lnXH2Om=np.log(XH2Om)
-    lnXOH_XH2O=np.log(XOH+lnXH2Om)
+    lnXOH_XH2O=np.log(XOH+XH2Om)
 
-    lnCHScalc=-19748*(1/T_K)+7.81+SumXMAM+lnXOH_XH2O
+    lnCHScalc=-19748*(1/T_K2)+7.81+SumXMAM+lnXOH_XH2O
 
     HScal=(np.exp(DeltaGRT+lnCHScalc+lnXFeO+LnrFeO+lnaFeS+C1PC2erf))/(100+Liqs['H2O_Liq'])*100
 
     # If NaKAl>-0.015
-    NaKAlterm=(1673/(T_K))*(19.634*NaKAl+0.2542)
+    NaKAlterm=(1673/(T_K2))*(19.634*NaKAl+0.2542)
     #Else
     LowNaKAl= NaKAl<-0.015
     NaKAlterm[LowNaKAl] =(1673/(T_K))*(26.365*NaKAl+0.9587)
@@ -256,20 +257,53 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
     lnCHS_NKA_term[NaKAlterm<=0]=lnCHScalc
 
     HScal2=(np.exp(DeltaGRT+lnCHS_NKA_term+lnXFeO+LnrFeO+lnaFeS+C1PC2erf))/(100+Liqs['H2O_Liq'])*100
+
     # If H2O>0
 
     # If HScal2>HScal
     Stot_calc_H2O=HScal2+S2_calc
     #If HScal2<=HScal
     calc2gcal=HScal2>HScal
+
     Stot_calc_H2O[~calc2gcal]=HScal+S2_calc
+
+
 
     # If H2O=0
     noH2O=~(Liqs['H2O_Liq']>0)
     Stot_calc_H2O[noH2O]=S2_calc
 
-    Liqs.insert(0, 'SCSS_Tot', Stot_calc_H2O)
-    Liqs.insert(1, 'Fe_FeNiCu_Sulf', Fe_FeNiCu_Sulf_calc)
+    #
+    # Liqs.insert(1, 'Fe_FeNiCu_Sulf', Fe_FeNiCu_Sulf_calc)
+    # Liqs.insert(2, 'HS cal', HScal)
+    # Liqs.insert(3, 'S2_calc', S2_calc)
+    # Liqs.insert(4, 'lnCHS_NKA_term', lnCHS_NKA_term)
+
+    params_S=pd.DataFrame(data={'lnCHS_NKA_term': lnCHS_NKA_term,
+    'NaKAl':NaKAl,
+    'DeltaGRT': DeltaGRT,
+    'SumXMAM': SumXMAM ,
+    'lnCs': lnCs ,
+    'lnXFeO': lnXFeO ,
+    'LnrFeO': LnrFeO ,
+    'lnaFeS': lnaFeS ,
+    'C1PC2erf': C1PC2erf ,
+    'lnS': lnS ,
+    'S2_calc': S2_calc ,
+    'lnXH2Ot': lnXH2Ot ,
+    'KOH':KOH  ,
+    'XOH': XOH ,
+    'lnXOH': lnXOH ,
+    'XH2Om': XH2Om ,
+    'lnXH2Om':  lnXH2Om,
+    'lnXOH_XH2O': lnXOH_XH2O ,
+    'lnCHScalc':  lnCHScalc,
+    'HScal': HScal ,
+    'NaKAlterm':NaKAlterm  ,
+    'HScal2':HScal2  })
+
+
+
     if any(Liqs.columns.str.contains('Fe3Fet_Liq')):
         if Fe3Fet_Liq is not None:
             print('replacing Fe3Fet_Liq in the original dataframe with that input into the function')
@@ -277,7 +311,10 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
 
     else:
         Liqs.insert(2, 'Fe3Fet_Liq', Fe3Fet_Liq)
-    return Liqs
+
+    df_out=pd.concat([Liqs, params_S, mol_cat_norm], axis=1)
+    df_out.insert(0, 'SCSS_Tot', Stot_calc_H2O)
+    return df_out
 
 
 

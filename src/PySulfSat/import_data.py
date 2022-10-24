@@ -32,7 +32,9 @@ def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, sample_l
             df['Cu_Liq_ppm']=df['Cu_Liq']
             print('We didnt find a Ni column in your Petrolog input')
 
-        df['FeOt_Liq']=df['FeO_Liq']+df['Fe2O3_Liq']*0.89998
+        df['FeOt_Liq']=df['FeO_Liq']+df['Fe2O3_Liq']*0.899
+
+        98
         df['Fe3Fet_Liq']=1-(df['FeO_Liq']/df['FeOt_Liq'])
         df2=df.drop(['FeO_Liq', 'Fe2O3_Liq'], axis=1)
         df2['T_K']=df2['Temperature']+273.15

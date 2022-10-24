@@ -43,6 +43,8 @@ Welcome to Read the doc's documentation!
 
    Examples/Integrating_with_PyMELTS/Single_FC_Model
 
+   Examples/Integrating_with_PyMELTS/Polybaric_FC_Model
+
 .. toctree::
    :maxdepth: 2
    :caption: Integrating SCSS modelling/MI/Sulfide Chemistry
