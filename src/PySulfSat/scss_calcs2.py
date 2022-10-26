@@ -28,7 +28,7 @@ def norm_liqs_excl_H2O(Liqs):
 
 
 def calculate_LZ2022_SCSS(*, df, T_K, P_kbar, H2O_Liq=None, Fe_FeNiCu_Sulf=None, Fe3Fet_Liq=None, logfo2=None,
-Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
+Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5, Fe_Sulf=None, Cu_Sulf=None, Ni_Sulf=None):
 
     '''
     Calculates SCSS using the model of Li and Zhang (2022), with options for users to
@@ -60,7 +60,7 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
 
       if you want to calculate sulfide composition:
 
-            Fe_FeNiCu_Sulf = "Calc_Smythe"
+            Fe_FeNiCu_Sulf = "Calc_Smythe", also needs Ni_Sulf_init, and Cu_Sulf_init
             Calculates sulfide composition analagous to the Solver function in the Smythe et al. (2017) spreadsheet.
             Here, we use Scipy optimize to find the ideal Ni and Cu
             contents using Kds from Kiseeva et al. (2015) and the Ni and Cu content of the melt.
@@ -181,6 +181,13 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
         if Fe_FeNiCu_Sulf=="Calc_ONeill":
             Fe_FeNiCu_Sulf_calc=calculate_ONeill_sulf(FeOt_Liq=df['FeOt_Liq'],
             Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, Fe3Fet_Liq=Fe3Fet_Liq)
+
+
+    elif Fe_Sulf is not None and Ni_Sulf is not None and Cu_Sulf is not None:
+            Fe_FeNiCu_Sulf_calc=calculate_sulf_FeFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+            Cu_FeNiCu_Sulf_calc=calculate_sulf_CuFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+            Ni_FeNiCu_Sulf_calc=calculate_sulf_NiFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+
     else:
         Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf
         #print('replaced')
@@ -368,7 +375,108 @@ def calculate_F2015_SCSS(*, df, T_K, P_kbar, H2O_Liq=None):
     out=pd.concat([mol_fracs, df_c], axis=1)
     out.insert(0, 'SCSS_ppm_Fortin2015', SCSS_Calc)
     return out
+## Liu et al. 2021 SCSS calculations
+def calculate_Liu2021_SCSS(df, T_K, P_kbar, Fe_FeNiCu_Sulf=None, H2O_Liq=None,
+Ni_Liq=None, Cu_Liq=None, Fe_Sulf=None, Cu_Sulf=None, Ni_Sulf=None, Ni_Sulf_init=5, Cu_Sulf_init=5, Fe3Fet_Liq=None):
+    '''
+    Calculates the SCSS using the model of Liu et al. (2021), doesnt depend on silicate melt composition apart from
+    H2O_Liq
 
+    Parameters
+    -------
+    df: pandas.DataFrame
+        Dataframe of liquid compositions. Needs to have the headings "SiO2_Liq", "TiO2_Liq" etc, with
+        compositions in oxide wt%. all FeO should be entered as FeOt_Liq, which can then be partitioned
+        using the Fe3Fet_Liq input. Heading order doesn't matter.
+
+    T_K: int, float, pandas.Series
+        Temperature in Kelvin.
+
+    P_kbar: int, float, pandas.Series
+        Pressure in kbar
+
+    Fe3Fet_Liq: int, float, pandas.Series, or "Calc_ONeill"
+        Proportion of Fe3+ in the liquid, as various parts of the calculation use only Fe2.
+        If "Calc_ONeill" Calculates as a function of MgO content, using the MORB relationship.
+
+    Sulfide Composition: Options to calculate from the liquid composition, enter the comp in el wt%,
+    or enter the FeFeNiCu, Cu
+
+      if you want to calculate sulfide composition:
+
+            Fe_FeNiCu_Sulf = "Calc_Smythe", also needs Ni_Sulf_init, and Cu_Sulf_init
+            Calculates sulfide composition analagous to the Solver function in the Smythe et al. (2017) spreadsheet.
+            Here, we use Scipy optimize to find the ideal Ni and Cu
+            contents using Kds from Kiseeva et al. (2015) and the Ni and Cu content of the melt.
+            Requires user to also enter Ni_Liq and Cu_Liq.
+
+            Or
+
+            Fe_FeNiCu_Sulf = "Calc_ONeill"
+            Calculates sulfide composition using the empirical expression of O'Neill (2021), which depends on
+            FeOt_Liq, Ni_Liq, Cu_Liq, and Fe3Fet_Liq. We allow users to enter their own Fe3Fet_Liq,
+            as we believe the empirical model of Neill where Fe3Fet_Liq is a function of MgO content is not
+            broadly applicable.
+
+        if you want to input a Fe_FeNiCu_Sulf ratio:
+            Fe_FeNiCu_Sulf = int, float, pandas series
+            Calculates SCSS using this ratio.
+            If you want the non-ideal SCSS to be returned, you also need to enter
+            values for Cu_FeNiCu_Sulf and Ni_FeNiCu_Sulf
+
+        if you want to input a measured sulfide composition in el wt%
+            Fe_Sulf, Ni_Sulf, Cu_Sulf = int, float, pandas series
+
+
+
+    '''
+    df_c=df.copy()
+    if Fe_FeNiCu_Sulf is not None:
+        if H2O_Liq is None:
+            H2O_Liq=df_c['H2O_Liq']
+
+        Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf
+
+
+
+    if isinstance(Fe_FeNiCu_Sulf, str):
+        if Fe_FeNiCu_Sulf=="Calc_Smythe":
+
+
+            # This does the Scipy minimisation of Cu and Ni contents using Kiseeva et al. (2015)
+            calc_sulf=calculate_Symthe_sulf_minimisation(FeOt_Liq=df_c['FeOt_Liq'], Fe3Fet_Liq=df_c['Fe3Fet_Liq'],
+                                            T_K=T_K, Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, Ni_Sulf_init=Ni_Sulf_init, Cu_Sulf_init=Cu_Sulf_init)
+
+            # This feeds those result back into a simpler function to get the Fe, S and O content of the sulfide
+            Sulf_All=calculate_Kiseeva_sulf_comp_kd(Ni_Sulf=calc_sulf['Ni_Sulf'],Cu_Sulf=calc_sulf['Cu_Sulf'],
+                                FeOt_Liq=df_c['FeOt_Liq'], Fe3Fet_Liq=df_c['Fe3Fet_Liq'],
+                                            T_K=T_K)
+
+            Fe_FeNiCu_Sulf_calc=calculate_sulf_FeFeNiCu(Sulf_All['Ni_Sulf'], Sulf_All['Cu_Sulf'], Sulf_All['Fe_Sulf'])
+            Cu_FeNiCu_Sulf_calc=calculate_sulf_CuFeNiCu(Sulf_All['Ni_Sulf'], Sulf_All['Cu_Sulf'], Sulf_All['Fe_Sulf'])
+            Ni_FeNiCu_Sulf_calc=calculate_sulf_NiFeNiCu(Sulf_All['Ni_Sulf'], Sulf_All['Cu_Sulf'], Sulf_All['Fe_Sulf'])
+
+            df_c['Ni_Sulf_Calc']=Sulf_All['Ni_Sulf']
+            df_c['Cu_Sulf_Calc']=Sulf_All['Cu_Sulf']
+            df_c['Fe_Sulf_Calc']=Sulf_All['Fe_Sulf']
+            df_c['O_Sulf_Calc']=Sulf_All['O_Sulf']
+            df_c['S_Sulf_Calc']=Sulf_All['S_Sulf']
+
+        if Fe_FeNiCu_Sulf=="Calc_ONeill":
+            Fe_FeNiCu_Sulf_calc=calculate_ONeill_sulf(FeOt_Liq=df_c['FeOt_Liq'],
+            Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, Fe3Fet_Liq=Fe3Fet_Liq)
+            df_c['Fe_FeNiCu_Sulf_calc']=Fe_FeNiCu_Sulf_calc
+            Fe_FeNiCu_Sulf=Fe_FeNiCu_Sulf_calc
+
+    elif Fe_Sulf is not None and Ni_Sulf is not None and Cu_Sulf is not None:
+            Fe_FeNiCu_Sulf_calc=calculate_sulf_FeFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+            Cu_FeNiCu_Sulf_calc=calculate_sulf_CuFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+            Ni_FeNiCu_Sulf_calc=calculate_sulf_NiFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+
+    scss=Fe_FeNiCu_Sulf_calc*np.exp(13.88-9744/T_K-328*(P_kbar/10)/T_K)+104*H2O_Liq
+
+    df_c.insert(0, 'SCSS_calc', scss)
+    return df_c
 
 ## ONeill 2021 SCSS calculations
 
@@ -414,7 +522,7 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
 
       if you want to calculate sulfide composition:
 
-            Fe_FeNiCu_Sulf = "Calc_Smythe"
+            Fe_FeNiCu_Sulf = "Calc_Smythe", also needs Ni_Sulf_init, and Cu_Sulf_init
             Calculates sulfide composition analagous to the Solver function in the Smythe et al. (2017) spreadsheet.
             Here, we use Scipy optimize to find the ideal Ni and Cu
             contents using Kds from Kiseeva et al. (2015) and the Ni and Cu content of the melt.
@@ -1135,7 +1243,7 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
 
       if you want to calculate sulfide composition:
 
-            Fe_FeNiCu_Sulf = "Calc_Smythe"
+            Fe_FeNiCu_Sulf = "Calc_Smythe", also needs Ni_Sulf_init, and Cu_Sulf_init
             Calculates sulfide composition analagous to the Solver function in the Smythe et al. (2017) spreadsheet.
             Here, we use Scipy optimize to find the ideal Ni and Cu
             contents using Kds from Kiseeva et al. (2015) and the Ni and Cu content of the melt.

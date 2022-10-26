@@ -8,7 +8,7 @@ Subscribe to `PySulfSat on youtube <https://www.youtube.com/channel/UC3J8Lj6Yv_8
 We recommend readers go through the associated notebooks for each of their tutorials in their own time to read the detailed descriptions. These videos are only an introductory guide! Files available from: https://github.com/PennyWieser/PySulfSat. Click the green "Code" button in the top right, then "download zip", unzip, and open the "Examples" folder. Or you can download the files directly from this website.
 
 
-Why did we develop Thermobar
+Why did we develop PySulfSat
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 A short introduction to the motivation behind developing PySulfSat
 

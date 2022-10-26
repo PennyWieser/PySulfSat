@@ -10,7 +10,7 @@ First, obtain Python3 (tested on V3.7). If you haven't used python before, we re
 
 All of the You Tube examples shown here use Jupyter Lab, which is an easy-friendly editor that will be installed along with Anaconda.
 
-Thermobar can be installed using pip in one line. If you are using a terminal, enter:
+PySulfSat can be installed using pip in one line. If you are using a terminal, enter:
 
 .. code-block:: python
 
