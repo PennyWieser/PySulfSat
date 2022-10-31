@@ -58,7 +58,8 @@ Welcome to Read the doc's documentation!
    :maxdepth: 2
    :caption: Other useful functions
 
-   Examples/S6_S2_Corrections/S6_S2_Corrections
+   Examples/S6_S2_Corrections/S6_S2_Corrections_Nash_Jugo_Kleinsasser
+   Examples/S6_S2_Corrections/ONeillMav2022
 
 
    Examples/Other_Useful_Functions/Calculating_KDs_Kiseeva
