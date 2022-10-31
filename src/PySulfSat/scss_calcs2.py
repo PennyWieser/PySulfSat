@@ -489,7 +489,191 @@ def calculate_ONeill_sulf(FeOt_Liq, Ni_Liq, Cu_Liq, MgO_Liq=None, Fe3Fet_Liq=Non
 
     Fe_FeNiCu=1/(1+(Ni_Liq/(FeOt_Liq*(1-Fe3Fet_Liq)))*0.013+(Cu_Liq/(FeOt_Liq*(1-Fe3Fet_Liq)))*0.025)
     return Fe_FeNiCu
+# New 2022 Spreadsheet with Mavrogenes that is circulating
 
+def calculate_OM2022_SCSS(*, df, T_K, P_kbar, Fe3Fet_Liq=None, Fe_FeNiCu_Sulf=None,
+Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=None,
+Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
+
+    '''
+    Calculates SCSS using the model of O'Neill (2021) as implemented in the supporting spreadsheet of ONeill and Mavrogenes, 2022
+    The only difference is a 7.2*Fe*Si term in 2021, 7.2*(Mn+Fe)*Si in 2022.
+    This function has options for users to
+    calculate sulfide composition from liquid composition using the approach of Smythe et al. (2017),
+    the empirical parameterization of O'Neill (2021),  or input a sulfide composition.
+
+    Parameters
+    -------
+    df: pandas.DataFrame
+        Dataframe of liquid compositions. Needs to have the headings "SiO2_Liq", "TiO2_Liq" etc, with
+        compositions in oxide wt%. all FeO should be entered as FeOt_Liq, which can then be partitioned
+        using the Fe3Fet_Liq input. Heading order doesn't matter.
+
+    T_K: int, float, pandas.Series
+        Temperature in Kelvin.
+
+    P_kbar: int, float, pandas.Series
+        Pressure in kbar
+
+    Fe3Fet_Liq: int, float, pandas.Series, or "Calc_ONeill"
+        Proportion of Fe3+ in the liquid, as various parts of the calculation use only Fe2.
+        If "Calc_ONeill" Calculates as a function of MgO content, using the MORB relationship.
+
+    Sulfide Composition: Options to calculate from the liquid composition, enter the comp in el wt%,
+    or enter the FeFeNiCu, Cu
+
+      if you want to calculate sulfide composition:
+
+            Fe_FeNiCu_Sulf = "Calc_Smythe", also needs Ni_Sulf_init, and Cu_Sulf_init
+            Calculates sulfide composition analagous to the Solver function in the Smythe et al. (2017) spreadsheet.
+            Here, we use Scipy optimize to find the ideal Ni and Cu
+            contents using Kds from Kiseeva et al. (2015) and the Ni and Cu content of the melt.
+            Requires user to also enter Ni_Liq and Cu_Liq.
+
+            Or
+
+            Fe_FeNiCu_Sulf = "Calc_ONeill"
+            Calculates sulfide composition using the empirical expression of O'Neill (2021), which depends on
+            FeOt_Liq, Ni_Liq, Cu_Liq, and Fe3Fet_Liq. We allow users to enter their own Fe3Fet_Liq,
+            as we believe the empirical model of Neill where Fe3Fet_Liq is a function of MgO content is not
+            broadly applicable.
+
+        if you want to input a Fe_FeNiCu_Sulf ratio:
+            Fe_FeNiCu_Sulf = int, float, pandas series
+            Calculates SCSS using this ratio.
+            If you want the non-ideal SCSS to be returned, you also need to enter
+            values for Cu_FeNiCu_Sulf and Ni_FeNiCu_Sulf
+
+        if you want to input a measured sulfide composition in el wt%
+            Fe_Sulf, Ni_Sulf, Cu_Sulf = int, float, pandas series
+
+
+
+
+    Returns
+    -------
+    pandas.DataFrame:
+        Contains column for SCSS ideal, 1 sigma, input T and P, and the various intermediate steps of the calculation.
+
+    '''
+    df_c=df.copy()
+
+
+    # if 'P2O5_Liq' in df_c.columns:
+    df_c['P2O5_Liq']=0 # Doesnt have P2O5 in the input
+    liqs=calculate_anhydrous_cat_fractions_liquid(liq_comps=df_c)
+
+    if isinstance(Fe3Fet_Liq, str) and Fe3Fet_Liq == "Calc_ONeill":
+        Fe2O3_Calc=np.exp(1.46-0.177*df_c['MgO_Liq'])
+        Fe3Fet_Liq=Fe2O3_Calc*0.8998/(df_c['FeOt_Liq'])
+        df_c['Fe3Fet_Liq']=Fe3Fet_Liq
+        liqs['Fe3Fet_Liq_calc']=Fe3Fet_Liq
+    if Fe3Fet_Liq is not None and not isinstance(Fe3Fet_Liq, str):
+          df_c['Fe3Fet_Liq']=Fe3Fet_Liq
+
+    if Fe3Fet_Liq is None:
+        Fe3Fet_Liq=0
+
+
+
+    liqs['Fe2_Liq_cat_frac']=liqs['Fet_Liq_cat_frac']*(1-Fe3Fet_Liq)
+
+    # Then check options, basically need to have entered FeFeNiCu_Calc, or Fe_FeNiCu ratio, or all sulfide
+    if Fe_Sulf is not None and Ni_Sulf is not None and Cu_Sulf is not None and Fe_FeNiCu_Sulf is not None:
+        raise ValueError('You have entered both a Fe_FeNiCu_Sulf ratio, and the conc of Fe, Ni and Cu in your sulf. Please enter one set of inputs or another')
+
+    elif isinstance(Fe_FeNiCu_Sulf, str) and (Fe_FeNiCu_Sulf=="Calc_Smythe" or Fe_FeNiCu_Sulf == "Calc_ONeill"):
+        if Ni_Liq is None:
+            raise ValueError('If you select Fe_FeNiCu_Sulf = Calc, you need to enter the concentration of Cu and Ni in the liquid in ppm"')
+        if Cu_Liq is None:
+            raise ValueError('If you select Fe_FeNiCu_Sulf = Calc, you need to enter the concentration of Cu and Ni in the liquid in ppm"')
+
+    elif Fe_FeNiCu_Sulf is not None:
+        print('Using inputted Fe_FeNiCu_Sulf ratio for calculations.')
+
+    elif Fe_Sulf is not None and Ni_Sulf is not None and Cu_Sulf is not None:
+        print('Using inputted Sulf compositions to calculate Fe_FeNiCu_Sulf ratios.')
+
+    else:
+        raise ValueError('Input for sulfide composition not recognised.')
+
+
+    if isinstance(Fe_FeNiCu_Sulf, str):
+        if Fe_FeNiCu_Sulf=="Calc_Smythe":
+
+
+            # This does the Scipy minimisation of Cu and Ni contents using Kiseeva et al. (2015)
+            calc_sulf=calculate_Symthe_sulf_minimisation(FeOt_Liq=df_c['FeOt_Liq'], Fe3Fet_Liq=df_c['Fe3Fet_Liq'],
+                                            T_K=T_K, Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, Ni_Sulf_init=Ni_Sulf_init, Cu_Sulf_init=Cu_Sulf_init)
+
+            # This feeds those result back into a simpler function to get the Fe, S and O content of the sulfide
+            Sulf_All=calculate_Kiseeva_sulf_comp_kd(Ni_Sulf=calc_sulf['Ni_Sulf'],Cu_Sulf=calc_sulf['Cu_Sulf'],
+                                FeOt_Liq=df_c['FeOt_Liq'], Fe3Fet_Liq=df_c['Fe3Fet_Liq'],
+                                            T_K=T_K)
+
+            Fe_FeNiCu_Sulf_calc=calculate_sulf_FeFeNiCu(Sulf_All['Ni_Sulf'], Sulf_All['Cu_Sulf'], Sulf_All['Fe_Sulf'])
+            Cu_FeNiCu_Sulf_calc=calculate_sulf_CuFeNiCu(Sulf_All['Ni_Sulf'], Sulf_All['Cu_Sulf'], Sulf_All['Fe_Sulf'])
+            Ni_FeNiCu_Sulf_calc=calculate_sulf_NiFeNiCu(Sulf_All['Ni_Sulf'], Sulf_All['Cu_Sulf'], Sulf_All['Fe_Sulf'])
+
+            liqs['Ni_Sulf_Calc']=Sulf_All['Ni_Sulf']
+            liqs['Cu_Sulf_Calc']=Sulf_All['Cu_Sulf']
+            liqs['Fe_Sulf_Calc']=Sulf_All['Fe_Sulf']
+            liqs['O_Sulf_Calc']=Sulf_All['O_Sulf']
+            liqs['S_Sulf_Calc']=Sulf_All['S_Sulf']
+
+        if Fe_FeNiCu_Sulf=="Calc_ONeill":
+            Fe_FeNiCu_Sulf_calc=calculate_ONeill_sulf(FeOt_Liq=df_c['FeOt_Liq'],
+            Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, Fe3Fet_Liq=Fe3Fet_Liq)
+            liqs['Fe_FeNiCu_Sulf_calc']=Fe_FeNiCu_Sulf_calc
+            Fe_FeNiCu_Sulf=Fe_FeNiCu_Sulf_calc
+
+    elif Fe_Sulf is not None and Ni_Sulf is not None and Cu_Sulf is not None:
+            Fe_FeNiCu_Sulf_calc=calculate_sulf_FeFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+            Cu_FeNiCu_Sulf_calc=calculate_sulf_CuFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+            Ni_FeNiCu_Sulf_calc=calculate_sulf_NiFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf)
+
+    else:
+        Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf
+
+    if isinstance(Fe_FeNiCu_Sulf_calc, float) is True:
+        Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf_calc
+    else:
+        Fe_FeNiCu_Sulf_calc=Fe_FeNiCu_Sulf_calc.astype(float)
+
+
+
+
+    liqs['LnCS2_calc']=(8.77-23590/T_K+(1673/T_K)*(6.7*(liqs['Na_Liq_cat_frac']+liqs['K_Liq_cat_frac'])
+    +4.9*liqs['Mg_Liq_cat_frac']+8.1*liqs['Ca_Liq_cat_frac']+8.9*(liqs['Fet_Liq_cat_frac']+liqs['Mn_Liq_cat_frac'])
+    +5*liqs['Ti_Liq_cat_frac']+1.8*liqs['Al_Liq_cat_frac']
+    -22.2*liqs['Ti_Liq_cat_frac']*(liqs['Fet_Liq_cat_frac']+liqs['Mn_Liq_cat_frac'])
+        +7.2*((liqs['Fet_Liq_cat_frac']+liqs['Mn_Liq_cat_frac'])*liqs['Si_Liq_cat_frac']))-2.06*erf(-7.2*(liqs['Fet_Liq_cat_frac']+liqs['Mn_Liq_cat_frac'])))
+
+    liqs['DeltaG']=((137778-91.666*T_K+8.474*T_K*np.log(T_K))/(8.31441*T_K)+(-291*(P_kbar/10)+351*erf((P_kbar/10)))/T_K)
+
+    # print('Cation fractions')
+    # print()
+
+
+    liqs['Ln_a_FeS']=(np.log(Fe_FeNiCu_Sulf_calc*(1-liqs['Fe2_Liq_cat_frac'])))
+
+    liqs['Ln_a_FeO']=( np.log(liqs['Fe2_Liq_cat_frac'])+(((1-liqs['Fe2_Liq_cat_frac'])**2)*
+            (28870-14710*liqs['Mg_Liq_cat_frac']+1960*liqs['Ca_Liq_cat_frac']+43300*liqs['Na_Liq_cat_frac']+95380*liqs['K_Liq_cat_frac']-76880*liqs['Ti_Liq_cat_frac'])
+            +(1-liqs['Fe2_Liq_cat_frac'])*(-62190*liqs['Si_Liq_cat_frac']+31520*liqs['Si_Liq_cat_frac']*liqs['Si_Liq_cat_frac']))/(8.31441*T_K))
+
+    liqs['LnS']=(liqs['LnCS2_calc']+liqs['DeltaG']+liqs['Ln_a_FeS']-liqs['Ln_a_FeO'])
+
+    liqs['SCSS2_ppm']=np.exp(liqs['LnS'])
+
+    cols_to_move = ['SCSS2_ppm', 'LnS', "Ln_a_FeO",
+                    'Ln_a_FeS', 'DeltaG', 'LnCS2_calc']
+
+    Liqs = liqs[cols_to_move +
+                                    [col for col in liqs.columns if col not in cols_to_move]]
+
+    return Liqs
+
+# Old 2021 spreadsheet that is circulating
 
 def calculate_O2021_SCSS(*, df, T_K, P_kbar, Fe3Fet_Liq=None, Fe_FeNiCu_Sulf=None,
 Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=None,

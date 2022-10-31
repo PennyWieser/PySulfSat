@@ -2,6 +2,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+import scipy
+import scipy.optimize as optimize
+from scipy.special import erf
+
+
+
+from PySulfSat.core_calcs import *
+
 def calculate_SCSS_Total(SCSS, S6St_Liq):
     '''
     Calculates SCSS Total from the SCSS (2-)
@@ -246,4 +254,83 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
     df_Species2=df_Species.copy()
     df_Species2.drop(['SCAS_Tot_check', 'SCSS_Tot_check', 'SCSS_Tot_check'], axis=1, inplace=True)
     return df_Species2
+
+
+def calculate_OM2022_S6St(df, T_K, logfo2=None,
+                    Fe3Fet_Liq=None):
+    """
+    Calculates S6/ST (as well as Cs2- and Cs6+) Using ONeill and Mavrogenes (2022)
+
+    Parameters
+    -----------
+    Fe3Fet_Liq: int, float, pd.Series
+        Fe3Fet ratio in the liquid
+
+    OR
+
+    logfo2: int, float, pd.Series
+        logfo2 value
+
+    T_K: int, float, pd.series
+
+        Temperature in Kelvin
+
+    Returns
+    -----------
+
+    pd.DataFrame: Contains S6/ST, Cs2- and Cs6+, and all intermediate calculations + user inputs
+
+
+    """
+
+    liqs=df.copy()
+    liqs=calculate_anhydrous_cat_fractions_liquid(liq_comps=liqs)
+    T_K=T_K-0.15
+    if Fe3Fet_Liq is not None:
+        C5=1
+    if logfo2 is not None:
+        C5=2
+        logfo2_calc=logfo2
+
+    if Fe3Fet_Liq is not None and logfo2 is not None:
+        raise Exception('enter one of Fe3FetLIq or logfo2, not both as this is ambigous')
+
+    if C5==1: # specify Fe3Fet not logfo2
+        deltaQFM=(4*(np.log10(Fe3Fet_Liq/(1-Fe3Fet_Liq))+1.36-2*liqs['Na_Liq_cat_frac']
+                    -3.7*liqs['K_Liq_cat_frac']-2.4*liqs['Ca_Liq_cat_frac']))
+        logfo2_calc=deltaQFM-25050/T_K+8.58
+        liqs['deltaQFM_calc']=deltaQFM
+        liqs['logfo2_calc']=logfo2_calc
+    if C5==2: #If specify Fe3Fet
+        deltaQFM=logfo2-25050/T_K+8.58
+        liqs['deltaQFM_calc']=deltaQFM
+
+    if C5==2: # e.g. if Fe3Fet not given
+        Fe2Fet_Liq=1/(1+10**(0.25*deltaQFM-1.36+2*liqs['Na_Liq_cat_frac']+2.4*liqs['Ca_Liq_cat_frac']+3.7*liqs['K_Liq_cat_frac']))
+        liqs['Fe2Fet_Liq_calc']=Fe2Fet_Liq
+    if C5==1: # IF Fe3Fet is given
+        Fe2Fet_Liq=1-Fe3Fet_Liq
+
+    liqs['Fe2_Liq_cat_frac']=liqs['Fet_Liq_cat_frac']*Fe2Fet_Liq
+
+    liqs['LnCS2_calc']=(8.77-23590/T_K+(1673/T_K)*(6.7*(liqs['Na_Liq_cat_frac']+liqs['K_Liq_cat_frac'])
+        +4.9*liqs['Mg_Liq_cat_frac']+8.1*liqs['Ca_Liq_cat_frac']+8.9*(liqs['Fet_Liq_cat_frac']+liqs['Mn_Liq_cat_frac'])
+        +5*liqs['Ti_Liq_cat_frac']+1.8*liqs['Al_Liq_cat_frac']
+        -22.2*liqs['Ti_Liq_cat_frac']*(liqs['Fet_Liq_cat_frac']+liqs['Mn_Liq_cat_frac'])
+            +7.2*((liqs['Fet_Liq_cat_frac']+liqs['Mn_Liq_cat_frac'])*liqs['Si_Liq_cat_frac']))-2.06*erf(-7.2*(liqs['Fet_Liq_cat_frac']+liqs['Mn_Liq_cat_frac'])))
+
+    liqs['LnCS6_calc']=(-8.02+(21100+44000*liqs['Na_Liq_cat_frac']+18700*liqs['Mg_Liq_cat_frac']
+    +4300*liqs['Al_Liq_cat_frac']+35600*liqs['Ca_Liq_cat_frac']
+    +44200*liqs['K_Liq_cat_frac']+16500*liqs['Fe2_Liq_cat_frac']+12600*liqs['Mn_Liq_cat_frac'])/T_K)
+
+    liqs['LnKSO2S2']=-55921/T_K+25.07-0.6465*np.log(T_K)
+
+    liqs['LnS6S2']=(liqs['LnCS6_calc']-liqs['LnKSO2S2']-liqs['LnCS2_calc'])+2*np.log(10)*logfo2_calc
+    liqs['S6St_Liq']=1-1/(1+np.exp(liqs['LnS6S2']))
+
+    cols_to_move = ['S6St_Liq', 'LnCS2_calc', 'LnKSO2S2', 'LnS6S2',
+                    'deltaQFM_calc']
+    liqs = liqs[cols_to_move +
+                                    [col for col in liqs.columns if col not in cols_to_move]]
+    return liqs
 
