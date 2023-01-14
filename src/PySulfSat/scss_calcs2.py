@@ -27,11 +27,13 @@ def norm_liqs_excl_H2O(Liqs):
 
 
 
-def calculate_LZ2022_SCSS(*, df, T_K, P_kbar, H2O_Liq=None, Fe_FeNiCu_Sulf=None, Fe3Fet_Liq=None, logfo2=None,
-Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5, Fe_Sulf=None, Cu_Sulf=None, Ni_Sulf=None):
+def calculate_LiZhang2022_SCSS(*, df, T_K, P_kbar, H2O_Liq=None, Fe_FeNiCu_Sulf=None, Fe3Fet_Liq=None, logfo2=None,
+Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5, Fe_Sulf=None, Cu_Sulf=None, Ni_Sulf=None, T_K_transition=True,
+highT=False, lowT=False):
 
     '''
-    Calculates SCSS using the model of Li and Zhang (2022), with options for users to
+    Calculates SCSS using the model of Liu and Zhang (2022), doi: https://doi.org/10.1016/j.gca.2022.03.0080
+    with options for users to
     calculate sulfide composition from liquid composition using the approach of Smythe et al. (2017),
     the empirical parameterization of O'Neill (2021), or input a sulfide composition.
 
@@ -50,6 +52,9 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5, Fe_Sulf=None, Cu_Sulf=
 
     logfo2: int, float, or pandas.Series
         logfo2, used to convert to Fe3 following the method of Li and Zhang (2022)
+
+    T_K_transition : bool
+        The model shows a flip at 1200C. If T_K_transition is False, this doesnt happen. This generates more coherent results.
 
     Fe3Fet_Liq: int, float, pandas.Series, or "Calc_ONeill"
         Proportion of Fe3+ in the liquid, as various parts of the calculation use only Fe2.
@@ -220,14 +225,28 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5, Fe_Sulf=None, Cu_Sulf=
 
     lnaFeS_lowT=-(31464-(T_K2)*21.506)/8.314/(T_K2)+np.log(Fe_FeNiCu_Sulf_calc)
     lnaFeS_HighT=np.log(1-mol_cat_norm['Fe_cat'])+np.log(Fe_FeNiCu_Sulf_calc)
-    lnaFeS=lnaFeS_HighT
-    lnaFeS[T_K2<(1200+273)] =lnaFeS_lowT
+
 
     C1PC2erf_lowT=(-0.0291*(P_kbar)*1000+351*erf((P_kbar)*1000/10000))/(T_K2)+0.04*(P_kbar)*1000/8.314/(T_K2)
     C1PC2erf_highT=(-0.0291*(P_kbar)*1000+351*erf((P_kbar)*1000/10000))/(T_K2)
 
-    C1PC2erf=C1PC2erf_highT
-    C1PC2erf[T_K2<(1200+273)] =C1PC2erf_lowT
+
+    if T_K_transition is True:
+        C1PC2erf=C1PC2erf_highT
+        C1PC2erf[T_K2<(1200+273)] =C1PC2erf_lowT
+        lnaFeS=lnaFeS_HighT
+        lnaFeS[T_K2<(1200+273)] =lnaFeS_lowT
+    else:
+        if highT is False and lowT is False:
+            raise Exception('You have turned off the default T_K_transition, you now must decide if you want to use highT or lowT behavoir. Set highT or lowT=True')
+        if highT is True:
+            C1PC2erf=C1PC2erf_highT
+            lnaFeS=lnaFeS_HighT
+        if lowT is True:
+            C1PC2erf=C1PC2erf_lowT
+            lnaFeS=lnaFeS_lowT
+
+
 
     lnS=DeltaGRT+lnCs+lnXFeO+LnrFeO+lnaFeS+C1PC2erf
 
@@ -323,13 +342,123 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5, Fe_Sulf=None, Cu_Sulf=
     df_out.insert(0, 'SCSS_Tot', Stot_calc_H2O)
     return df_out
 
+## Blanchard et al. 2021 - SCSS calculations
 
+def calculate_B2021_SCSS(*, df, T_K, P_kbar, Fe_FeNiCu_Sulf, H2O_Liq=None):
+    '''
+    Calculates SCSS using the model of Blanchard et al. 2021
+    doi: https://doi.org/10.2138/am-2021-7649
+    designed for calculating sulfide saturation in peridotitic melt at upper         mantle conditions
+
+
+    Parameters
+    -----------
+    df: pandas.DataFrame
+        Dataframe of liquid compositions from the import_data function.
+        Needs to have the headings "SiO2_Liq", "TiO2_Liq" etc, with
+        compositions in oxide wt%. all FeO should be entered as FeOt_Liq, which can then be partitioned
+        using the Fe3Fet_Liq input. Heading order doesn't matter.
+
+    T_K: int, float, pandas.Series
+        Temperature in Kelvin.
+
+    P_kbar: int, float, pandas.Series
+        Pressure in kbar
+
+    Fe_FeNiCu: int, float, panda series
+        Fraction of Fe/(Fe+Ni+Cu) in the sulfide
+
+
+    H2O_Liq: int, float, pandas series (optional)
+        Overwrites H2O in the user entered dataframe
+
+
+
+    Returns
+    -----------
+    pandas.DataFrame
+        Calculated SCSS using eq11, eq12, mol fractions, and input compositions.
+
+
+
+    '''
+    # Coefficients for model 1 (Equation 11)
+    a_m1=27
+    B_m1=-4621
+    C_m1=-193
+    A_Si_m1=-25
+    A_Ti_m1=-13
+    A_Al_m1=-18
+    A_Mg_m1=-16
+    A_Fe_m1=-32
+    A_Ca_m1=-14
+    A_Na_m1=-17
+    A_K_m1=-27
+    A_H_m1=-19
+    A_SiFe_m1=76
+
+    # Coefficients for model 2 (Equation 12)
+
+
+
+    a_m2=7.95
+    B_m2=18159
+    C_m2=-190
+    A_Si_m2=-32677
+    A_Ti_m2=-15014
+    A_Al_m2=-23071
+    A_Mg_m2=-18258
+    A_Fe_m2=-41706
+    A_Ca_m2=-14668
+    A_Na_m2=-19529
+    A_K_m2=-34641
+    A_H_m2=-22677
+    A_SiFe_m2=120662
+
+    calcs=calculate_hydrous_cat_fractions_liquid(liq_comps=df)
+
+    P_GPa =P_kbar/10
+
+    # Calculating  cation sum term
+    catsum_term_m1=(+calcs['Si_Liq_cat_frac']*A_Si_m1 + calcs['Ti_Liq_cat_frac']*A_Ti_m1
+    +calcs['Al_Liq_cat_frac']*A_Al_m1 + calcs['Mg_Liq_cat_frac']*A_Mg_m1
+    +calcs['Fet_Liq_cat_frac']*A_Fe_m1 + calcs['Ca_Liq_cat_frac']*A_Ca_m1
+    +calcs['Na_Liq_cat_frac']*A_Na_m1 + calcs['K_Liq_cat_frac']*A_K_m1
+    +calcs['H2O_Liq_cat_frac']*A_H_m1
+    +A_SiFe_m1*(calcs['Fet_Liq_cat_frac']*calcs['Si_Liq_cat_frac'] )
+                    + calcs['K_Liq_cat_frac']*A_K_m1)
+
+    catsum_term_m2=(+calcs['Si_Liq_cat_frac']*A_Si_m2 + calcs['Ti_Liq_cat_frac']*A_Ti_m2
+    +calcs['Al_Liq_cat_frac']*A_Al_m2 + calcs['Mg_Liq_cat_frac']*A_Mg_m2
+    +calcs['Fet_Liq_cat_frac']*A_Fe_m2 + calcs['Ca_Liq_cat_frac']*A_Ca_m2
+    +calcs['Na_Liq_cat_frac']*A_Na_m2 + calcs['K_Liq_cat_frac']*A_K_m2
+    +calcs['H2O_Liq_cat_frac']*A_H_m2
+    +A_SiFe_m2*(calcs['Fet_Liq_cat_frac']*calcs['Si_Liq_cat_frac'] )
+                    + calcs['K_Liq_cat_frac']*A_K_m2)
+
+
+    lnSCSS_equation11=(a_m1+B_m1/T_K + (C_m1 * P_GPa)/T_K +
+                    catsum_term_m1 +np.log(Fe_FeNiCu_Sulf)
+                    -np.log(calcs['Fet_Liq_cat_frac'])
+                    )
+    SCSS_eq11=np.exp(lnSCSS_equation11)
+    lnSCSS_equation12=(a_m2+B_m2/T_K + (C_m2 * P_GPa)/T_K +
+                    catsum_term_m2/T_K +np.log(Fe_FeNiCu_Sulf)
+                    -np.log(calcs['Fet_Liq_cat_frac'])
+                    )
+    SCSS_eq12=np.exp(lnSCSS_equation12)
+
+    calcs.insert(0, 'SCSS_eq11', SCSS_eq11)
+    calcs.insert(1, 'SCSS_eq12', SCSS_eq12)
+
+    return calcs
 
 ## Fortin et al. (2015) SCSS Calculation
 
 def calculate_F2015_SCSS(*, df, T_K, P_kbar, H2O_Liq=None):
     '''
     Calculates SCSS using the model of Fortin et al. (2015).
+    doi: http://dx.doi.org/10.1016/j.gca.2015.03.0220
     Unlike the models of Symthe et al. (2017) or O'Neill (2021) this model doesn't
     require the sulfide composition, or the proportion of Fe3 in the liqiud.
 
@@ -379,8 +508,8 @@ def calculate_F2015_SCSS(*, df, T_K, P_kbar, H2O_Liq=None):
 def calculate_Liu2021_SCSS(df, T_K, P_kbar, Fe_FeNiCu_Sulf=None, H2O_Liq=None,
 Ni_Liq=None, Cu_Liq=None, Fe_Sulf=None, Cu_Sulf=None, Ni_Sulf=None, Ni_Sulf_init=5, Cu_Sulf_init=5, Fe3Fet_Liq=None):
     '''
-    Calculates the SCSS using the model of Liu et al. (2021), doesnt depend on silicate melt composition apart from
-    H2O_Liq
+    Calculates the SCSS using the model of Liu et al. (2021), doesnt depend on silicate melt composition apart from H2O_Liq.
+    Doi - https://doi.org/10.1016/j.chemgeo.2020.119913
 
     Parameters
     -------
@@ -483,7 +612,8 @@ Ni_Liq=None, Cu_Liq=None, Fe_Sulf=None, Cu_Sulf=None, Ni_Sulf=None, Ni_Sulf_init
 def calculate_ONeill_sulf(FeOt_Liq, Ni_Liq, Cu_Liq, MgO_Liq=None, Fe3Fet_Liq=None):
     '''
     Calculating the Fe_FeNiCu ratio in the sulfide using the empirical
-    parameterizatin of ONeill.
+    parameterizatin of ONeill et al. (2022)
+    doi: https://doi.org/10.1002/9781119473206.ch10
 
     '''
 
@@ -497,7 +627,8 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
 
     '''
     Calculates SCSS using the model of O'Neill (2021) as implemented in the supporting spreadsheet of ONeill and Mavrogenes, 2022
-    The only difference is a 7.2*Fe*Si term in 2021, 7.2*(Mn+Fe)*Si in 2022.
+    doi: https://doi.org/10.1016/j.gca.2022.06.020
+    The only difference between OM2022 and O2021 is a 7.2*Fe*Si term in 2021, 7.2*(Mn+Fe)*Si in 2022.
     This function has options for users to
     calculate sulfide composition from liquid composition using the approach of Smythe et al. (2017),
     the empirical parameterization of O'Neill (2021),  or input a sulfide composition.
@@ -680,9 +811,10 @@ Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=No
 Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
 
     '''
-    Calculates SCSS using the model of O'Neill (2021), with options for users to
-    calculate sulfide composition from liquid composition using the approach of Smythe et al. (2017),
-    the empirical parameterization of O'Neill (2021),  or input a sulfide composition.
+    Calculates SCSS using the model of O'Neill (2021).
+    doi:  https://doi.org/10.1002/9781119473206.ch10
+    Has  options for users to
+    calculate sulfide composition from liquid composition using the approach of Smythe et al. (2017), the empirical parameterization of O'Neill (2021),  or input a sulfide composition.
 
     Parameters
     -------
@@ -855,8 +987,64 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
 
     return Liqs
 
+## Masotta et al. (2013) calculations
+def calculate_SCAS_Masotta2014(liq_comps, T_K):
+    """ Calculates S6+ dissolved in the melt using Masotta et al. 2014,
+    doi: http://dx.doi.org/10.1016/j.gca.2015.02.0330
+
+    Parameters
+    -------
+
+    liq_comps: pandas.DataFrame
+                Panda DataFrame of liquid compositions with column headings SiO2_Liq, TiO2_Liq etc.
+
+    T_K: int, float, pandas.Series
+        Temperature in Kelvin
 
 
+    Returns
+    -------
+    pandas dataframe with calculated S in wt% and ppm, other intermediate
+    calculations, and input dataframe
+    """
+
+    df=liq_comps.copy()
+    mol_prop=ss.calculate_anhydrous_mol_proportions_liquid(liq_comps=df)
+    mol_frac=ss.calculate_anhydrous_mol_fractions_liquid(liq_comps=df)
+    cat_frac=ss.calculate_anhydrous_cat_fractions_liquid(liq_comps=df)
+
+    mol_prop_sum = mol_prop.sum(axis='columns')
+
+    NBOT=((2*(2*cat_frac['Si_Liq_cat_frac']
+    +2*cat_frac['Ti_Liq_cat_frac']+1.5*cat_frac['Al_Liq_cat_frac']
+        +cat_frac['Fet_Liq_cat_frac']+cat_frac['Mg_Liq_cat_frac']
+    +cat_frac['Ca_Liq_cat_frac']+0.5*cat_frac['Na_Liq_cat_frac']
+    +0.5*cat_frac['K_Liq_cat_frac'])-4*(cat_frac['Si_Liq_cat_frac']
+    +cat_frac['Ti_Liq_cat_frac']+cat_frac['Al_Liq_cat_frac']))
+    /(cat_frac['Si_Liq_cat_frac']+cat_frac['Ti_Liq_cat_frac']
+    +cat_frac['Al_Liq_cat_frac']))
+
+    LnKps=(8.95+-146.5*NBOT+(-26960/(T_K))+197200*NBOT*(1/(T_K))
+           +0.409*liq_comps['H2O_Liq'])
+
+    # Wont match exactly as they include SO3 in their sum, which we dont know
+    CaO_MF=((liq_comps['CaO_Liq']/56.0774)/(mol_prop_sum-mol_prop['CaO_Liq_mol_prop']
+            +liq_comps['CaO_Liq']/56.0774))
+    SO3_MF=np.exp(LnKps)/CaO_MF
+    C_SO3_melt=SO3_MF*(mol_prop_sum-mol_prop['CaO_Liq_mol_prop']
+                +liq_comps['CaO_Liq']/56.0774)*80.066
+    S_melt_wt=C_SO3_melt*0.40048
+    S_melt_ppm=S_melt_wt*10000
+
+    new=pd.DataFrame(data={'S_melt_ppm': S_melt_ppm,
+                              'S_melt_wt': S_melt_wt,
+                              'C_SO3_melt': C_SO3_melt,
+                              'SO3_MF': SO3_MF,
+                              'CaO_MF': CaO_MF,
+                              'LnKps': LnKps,
+                              'NBOT': NBOT})
+    df_out=pd.concat([new, df], axis=1)
+    return df_out
 
 ## Smythe SCSS calculations - More steps, as iteratively calculate sulfide composition.
 
@@ -907,9 +1095,14 @@ def Loop_Smythe_sulf_calc_residual(single_argx0, FeO_Liq, T_K,  Ni_Liq, Cu_Liq):
 
         # If FeO<13
     if FeO_Liq<13:
+
         O_Sulf=(FeO_Liq*0.24*((1-AG8)**2))
-    elif FeO_Liq>=13:
+
+    else:
+
         O_Sulf=(FeO_Liq*0.24*((1-AG9)**2))
+
+
 
     AL17=(Ni_Sulf*35.32650016/64.67349984)
     AL18=(Cu_Sulf*20.1442646/79.8557354)
@@ -1402,8 +1595,10 @@ def calculate_S2017_SCSS(*, df, T_K, P_kbar, Fe3Fet_Liq=None, Fe_FeNiCu_Sulf=Non
 Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=None, Ni_Liq=None, Cu_Liq=None,
 Ni_Sulf_init=5, Cu_Sulf_init=5):
     '''
-    Calculates SCSS using the model of Smythe et al. (2017), with options for users to
-    calculate sulfide composition from liquid composition, or input sulfide composition.
+    Calculates SCSS using the model of Smythe et al. (2017).
+    doi: https://doi.org/10.2138/am-2017-5800CCBY
+
+    Has with options for users to calculate sulfide composition from liquid composition, or input sulfide  composition.
 
     Parameters
     -------

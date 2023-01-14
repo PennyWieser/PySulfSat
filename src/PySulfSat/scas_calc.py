@@ -152,4 +152,65 @@ def calculate_ZT2022_SCAS(*, df, T_K, H2O_Liq=None):
     Smelt=XSmelt*sum_hyd_prop*32.07*10000
 
     df_c.insert(0, 'Calc SCAS (ppm)', Smelt)
+
     return df_c
+
+
+## Masotta et al. (2013) calculations
+def calculate_Masotta2014_SCAS(liq_comps, T_K):
+    """ Calculates S6+ dissolved in the melt using Masotta et al. 2014,
+    doi: http://dx.doi.org/10.1016/j.gca.2015.02.0330
+
+    Parameters
+    -------
+
+    liq_comps: pandas.DataFrame
+                Panda DataFrame of liquid compositions with column headings SiO2_Liq, TiO2_Liq etc.
+
+    T_K: int, float, pandas.Series
+        Temperature in Kelvin
+
+
+    Returns
+    -------
+    pandas dataframe with calculated S in wt% and ppm, other intermediate
+    calculations, and input dataframe
+    """
+
+    df=liq_comps.copy()
+    mol_prop=calculate_anhydrous_mol_proportions_liquid(liq_comps=df)
+    mol_frac=calculate_anhydrous_mol_fractions_liquid(liq_comps=df)
+    cat_frac=calculate_anhydrous_cat_fractions_liquid(liq_comps=df)
+
+    mol_prop_sum = mol_prop.sum(axis='columns')
+
+    NBOT=((2*(2*cat_frac['Si_Liq_cat_frac']
+    +2*cat_frac['Ti_Liq_cat_frac']+1.5*cat_frac['Al_Liq_cat_frac']
+        +cat_frac['Fet_Liq_cat_frac']+cat_frac['Mg_Liq_cat_frac']
+    +cat_frac['Ca_Liq_cat_frac']+0.5*cat_frac['Na_Liq_cat_frac']
+    +0.5*cat_frac['K_Liq_cat_frac'])-4*(cat_frac['Si_Liq_cat_frac']
+    +cat_frac['Ti_Liq_cat_frac']+cat_frac['Al_Liq_cat_frac']))
+    /(cat_frac['Si_Liq_cat_frac']+cat_frac['Ti_Liq_cat_frac']
+    +cat_frac['Al_Liq_cat_frac']))
+
+    LnKps=(8.95+-146.5*NBOT+(-26960/(T_K))+197200*NBOT*(1/(T_K))
+           +0.409*liq_comps['H2O_Liq'])
+
+    # Wont match exactly as they include SO3 in their sum, which we dont know
+    CaO_MF=((liq_comps['CaO_Liq']/56.0774)/(mol_prop_sum-mol_prop['CaO_Liq_mol_prop']
+            +liq_comps['CaO_Liq']/56.0774))
+    SO3_MF=np.exp(LnKps)/CaO_MF
+    C_SO3_melt=SO3_MF*(mol_prop_sum-mol_prop['CaO_Liq_mol_prop']
+                +liq_comps['CaO_Liq']/56.0774)*80.066
+    S_melt_wt=C_SO3_melt*0.40048
+    S_melt_ppm=S_melt_wt*10000
+
+    new=pd.DataFrame(data={'S_melt_ppm': S_melt_ppm,
+                              'S_melt_wt': S_melt_wt,
+                              'C_SO3_melt': C_SO3_melt,
+                              'SO3_MF': SO3_MF,
+                              'CaO_MF': CaO_MF,
+                              'LnKps': LnKps,
+                              'NBOT': NBOT})
+    df_out=pd.concat([new, df], axis=1)
+    return df_out

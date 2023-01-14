@@ -6,6 +6,9 @@ import scipy
 import scipy.optimize as optimize
 from scipy.special import erf
 
+#import warnings
+#warnings.simplefilter('error')
+
 
 
 from PySulfSat.core_calcs import *
@@ -256,13 +259,112 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
     return df_Species2
 
 
-def calculate_OM2022_S6St(df, T_K, logfo2=None,
-                    Fe3Fet_Liq=None):
-    """
-    Calculates S6/ST (as well as Cs2- and Cs6+) Using ONeill and Mavrogenes (2022)
+def calculate_BW2022_CS6(*, df, T_K):
+    """ Calculates logCs6 and Cs6 using the expression of
+    Boulanger and Wood, 2022
 
     Parameters
     -----------
+    df: pandas Dataframe
+        input dataframe of liquid compositions with _Liq after each oxide
+
+
+    T_K: int, float, pd.series
+        Temperature in Kelvin
+
+
+
+    """
+
+    liqs=df.copy()
+    liqs=calculate_anhydrous_cat_fractions_liquid(liq_comps=liqs)
+
+    logCs6=(-12.659+(3692*liqs['Ca_Liq_cat_frac'] - 7592*liqs['Si_Liq_cat_frac']
+        -13736*liqs['Ti_Liq_cat_frac']+3762*liqs['Al_Liq_cat_frac']+34483)/T_K)
+
+
+
+    liqs.insert(0, 'LogCS6_calc', logCs6)
+    liqs.insert(0, 'LnCS6_calc', np.log(10**logCs6))
+    liqs.insert(0, 'CS6_calc', 10**(logCs6))
+    return liqs
+
+
+
+def calculate_OM2022_CS6(df, T_K, Fe3Fet_Liq=None, logfo2=None):
+    """ Calculates ln Cs6+ using ONeill and Mavrogenes (2022)
+
+    Parameters
+    -----------
+    df: pandas Dataframe
+        input dataframe of liquid compositions with _Liq after each oxide
+
+
+    T_K: int, float, pd.series
+        Temperature in Kelvin
+
+
+
+    """
+    liqs=df.copy()
+
+
+
+    liqs=calculate_anhydrous_cat_fractions_liquid(liq_comps=liqs)
+
+
+    if Fe3Fet_Liq is not None:
+        C5=1
+    if logfo2 is not None:
+        C5=2
+        logfo2_calc=logfo2
+
+    if Fe3Fet_Liq is not None and logfo2 is not None:
+        raise Exception('enter one of Fe3FetLIq or logfo2, not both as this is ambigous')
+
+    if C5==1: # specify Fe3Fet not logfo2
+        deltaQFM=(4*(np.log10(Fe3Fet_Liq/(1-Fe3Fet_Liq))+1.36-2*liqs['Na_Liq_cat_frac']
+                    -3.7*liqs['K_Liq_cat_frac']-2.4*liqs['Ca_Liq_cat_frac']))
+        logfo2_calc=deltaQFM-25050/T_K+8.58
+        liqs['deltaQFM_calc']=deltaQFM
+        liqs['logfo2_calc']=logfo2_calc
+    if C5==2: #If specify Fe3Fet
+        deltaQFM=logfo2-25050/T_K+8.58
+        liqs['deltaQFM_calc']=deltaQFM
+
+    if C5==2: # e.g. if Fe3Fet not given
+        Fe2Fet_Liq=1/(1+10**(0.25*deltaQFM-1.36+2*liqs['Na_Liq_cat_frac']+2.4*liqs['Ca_Liq_cat_frac']+3.7*liqs['K_Liq_cat_frac']))
+        liqs['Fe2Fet_Liq_calc']=Fe2Fet_Liq
+    if C5==1: # IF Fe3Fet is given
+        Fe2Fet_Liq=1-Fe3Fet_Liq
+
+    liqs['Fe2_Liq_cat_frac']=liqs['Fet_Liq_cat_frac']*Fe2Fet_Liq
+
+    LnCS6_calc=(-8.02+(21100+44000*liqs['Na_Liq_cat_frac']+18700*liqs['Mg_Liq_cat_frac']
+    +4300*liqs['Al_Liq_cat_frac']+35600*liqs['Ca_Liq_cat_frac']
+    +44200*liqs['K_Liq_cat_frac']+16500*liqs['Fe2_Liq_cat_frac']+12600*liqs['Mn_Liq_cat_frac'])/T_K)
+
+
+    liqs.insert(0, 'LnCS6_calc', LnCS6_calc)
+    liqs.insert(0, 'LogCS6_calc', np.log10(np.exp(LnCS6_calc)) )
+    liqs.insert(0, 'CS6_calc', np.exp(LnCS6_calc))
+    return liqs
+
+def calculate_OM2022_S6St(df, T_K, logfo2=None,
+                    Fe3Fet_Liq=None):
+    """
+    Calculates S6/ST (as well as ln Cs2- and ln Cs6+) Using ONeill and Mavrogenes (2022)
+
+    Parameters
+    -----------
+    df: pandas Dataframe
+        input dataframe of liquid compositions with _Liq after each oxide
+
+
+    T_K: int, float, pd.series
+        Temperature in Kelvin
+
+
     Fe3Fet_Liq: int, float, pd.Series
         Fe3Fet ratio in the liquid
 
@@ -270,10 +372,6 @@ def calculate_OM2022_S6St(df, T_K, logfo2=None,
 
     logfo2: int, float, pd.Series
         logfo2 value
-
-    T_K: int, float, pd.series
-
-        Temperature in Kelvin
 
     Returns
     -----------
@@ -328,7 +426,7 @@ def calculate_OM2022_S6St(df, T_K, logfo2=None,
     liqs['LnS6S2']=(liqs['LnCS6_calc']-liqs['LnKSO2S2']-liqs['LnCS2_calc'])+2*np.log(10)*logfo2_calc
     liqs['S6St_Liq']=1-1/(1+np.exp(liqs['LnS6S2']))
 
-    cols_to_move = ['S6St_Liq', 'LnCS2_calc', 'LnKSO2S2', 'LnS6S2',
+    cols_to_move = ['S6St_Liq', 'LnCS2_calc', 'LnCS6_calc', 'LnKSO2S2', 'LnS6S2',
                     'deltaQFM_calc']
     liqs = liqs[cols_to_move +
                                     [col for col in liqs.columns if col not in cols_to_move]]

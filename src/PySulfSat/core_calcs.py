@@ -40,12 +40,14 @@ cation_num_liq_anhyd_df.set_index('Sample_ID_Liq', inplace=True)
 oxide_mass_liq_hyd = {'SiO2_Liq': 60.0843, 'MgO_Liq': 40.3044,
 'MnO_Liq': 70.9375, 'FeOt_Liq': 71.8464, 'CaO_Liq': 56.0774,
 'Al2O3_Liq': 101.961, 'Na2O_Liq': 61.9789, 'K2O_Liq': 94.196,
-'TiO2_Liq': 79.8788, 'P2O5_Liq': 141.944, 'H2O_Liq': 18}
+'TiO2_Liq': 79.8788, 'P2O5_Liq': 141.944, 'H2O_Liq': 18,
+'Cr2O3_Liq': 151.99}
 
 
 cation_num_liq_hyd = {'SiO2_Liq': 1, 'MgO_Liq': 1, 'MnO_Liq': 1,
 'FeOt_Liq': 1, 'CaO_Liq': 1, 'Al2O3_Liq': 2, 'Na2O_Liq': 2,
-'K2O_Liq': 2, 'TiO2_Liq': 1, 'P2O5_Liq': 2, 'H2O_Liq':2}
+'K2O_Liq': 2, 'TiO2_Liq': 1, 'P2O5_Liq': 2, 'H2O_Liq':2,
+'Cr2O3_Liq':2}
 
 
 # Turns dictionary into a dataframe so pandas matrix math functions can be used
@@ -608,7 +610,7 @@ def convert_fo2_to_fe_partition(*, liq_comps, T_K, P_kbar,
         +(3.201*mol_frac['CaO_Liq_mol_frac'])+(5.854*mol_frac['Na2O_Liq_mol_frac'])+(6.215*mol_frac['K2O_Liq_mol_frac']))
         -3.36*(1-(To/T_K) - np.log(T_K/To)) -0.000000701*((P_kbar*100000000)/T_K)
          + -0.000000000154*(((T_K-1673)*(P_kbar*100000000))/T_K) + 0.0000000000000000385*((P_kbar*100000000)**2/T_K))
-        print(ln_XFe2FeO3_XFeO)
+        #print(ln_XFe2FeO3_XFeO)
     if model=="Put2016_eq6b":
         ln_XFe2FeO3_XFeO=(-6.35+10813.8/T_K + 0.19*np.log(fo2)+ 12.4*(mol_frac['Na2O_Liq_mol_frac']
          +mol_frac['K2O_Liq_mol_frac'])
