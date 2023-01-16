@@ -261,7 +261,7 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
 
 def calculate_BW2022_CS6(*, df, T_K):
     """ Calculates logCs6 and Cs6 using the expression of
-    Boulanger and Wood, 2022
+    Boulanger and Wood, 2022. Also converts into the same form as ONeill and Mavrogenes
 
     Parameters
     -----------
