@@ -53,6 +53,10 @@ Welcome to Read the doc's documentation!
    Examples/Sulf_Evolution_During_FC/Sulfide_sat_magma_evolution_Iceland
 
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Mantle Melting
+   Examples/Mantle_Melting_Lee_Wieser/Simple_Melting_Cu_S_Ba
 
 .. toctree::
    :maxdepth: 2
@@ -63,6 +67,12 @@ Welcome to Read the doc's documentation!
 
 
    Examples/Other_Useful_Functions/Calculating_KDs_Kiseeva
+
+
+ .. toctree::
+   :maxdepth: 2
+   :caption: Benchmarking
+   Benchmarking/Boulling_Wood_2022/BW_2022
 
 
 
