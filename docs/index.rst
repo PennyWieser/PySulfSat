@@ -54,7 +54,13 @@ Welcome to PySulfSat's documentation!
    Examples/Sulf_Evolution_During_FC/Sulfide_sat_magma_evolution_Iceland
 
 
+.. toctree::
+   :maxdepth: 2
+   :caption: S6+ corrections
 
+
+   Examples/S6_S2_Corrections/S6_S2_Corrections_Nash_Jugo_Kleinsasser
+   Examples/S6_S2_Corrections/CS6_S6ST_Correction
 
 
 .. toctree::
