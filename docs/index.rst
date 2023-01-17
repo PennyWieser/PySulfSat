@@ -54,10 +54,8 @@ Welcome to PySulfSat's documentation!
    Examples/Sulf_Evolution_During_FC/Sulfide_sat_magma_evolution_Iceland
 
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Mantle Melting
-   Examples/Mantle_Melting_Lee_Wieser/Simple_Melting_Cu_S_Ba
+
+
 
 .. toctree::
    :maxdepth: 2
@@ -65,8 +63,6 @@ Welcome to PySulfSat's documentation!
 
    Examples/S6_S2_Corrections/S6_S2_Corrections_Nash_Jugo_Kleinsasser
    Examples/S6_S2_Corrections/ONeillMav2022
-
-
    Examples/Other_Useful_Functions/Calculating_KDs_Kiseeva
 
 
@@ -74,6 +70,13 @@ Welcome to PySulfSat's documentation!
    :maxdepth: 2
    :caption: Benchmarking
    Benchmarking/Boulling_Wood_2022/BW_2022
+
+
+   .. toctree::
+   :maxdepth: 2
+   :caption: Mantle Melting
+   Examples/Mantle_Melting_Lee_Wieser/Simple_Melting_Cu_S_Ba
+   Examples/Mantle_Melting_Lee_Wieser/Complex_melt_changing_SCSS
 
 
 
