@@ -435,3 +435,85 @@ def calculate_OM2022_S6St(df, T_K, logfo2=None,
                                     [col for col in liqs.columns if col not in cols_to_move]]
     return liqs
 
+
+def calculate_BW2022_OM2022_S6St(df, T_K, logfo2=None,
+                    Fe3Fet_Liq=None):
+    """
+    Calculates S6/ST (as well as ln Cs2- and ln Cs6+) Using ONeill and Mavrogenes (2022)
+    for CS2- and Boulliung and Wood (2022) for CS6+
+
+    Parameters
+    -----------
+    df: pandas Dataframe
+        input dataframe of liquid compositions with _Liq after each oxide
+
+
+    T_K: int, float, pd.series
+        Temperature in Kelvin
+
+
+    Fe3Fet_Liq: int, float, pd.Series
+        Fe3Fet ratio in the liquid
+
+    OR
+
+    logfo2: int, float, pd.Series
+        logfo2 value
+
+    Returns
+    -----------
+
+    pd.DataFrame: Contains S6/ST, Cs2- and Cs6+, and all intermediate calculations + user inputs
+
+
+    """
+
+    liqs=df.copy()
+    liqs=calculate_anhydrous_cat_fractions_liquid(liq_comps=liqs)
+    T_K=T_K-0.15
+    if Fe3Fet_Liq is not None:
+        C5=1
+    if logfo2 is not None:
+        C5=2
+        logfo2_calc=logfo2
+
+    if Fe3Fet_Liq is not None and logfo2 is not None:
+        raise Exception('enter one of Fe3FetLIq or logfo2, not both as this is ambigous')
+
+    if C5==1: # specify Fe3Fet not logfo2
+        deltaQFM=(4*(np.log10(Fe3Fet_Liq/(1-Fe3Fet_Liq))+1.36-2*liqs['Na_Liq_cat_frac']
+                    -3.7*liqs['K_Liq_cat_frac']-2.4*liqs['Ca_Liq_cat_frac']))
+        logfo2_calc=deltaQFM-25050/T_K+8.58
+        liqs['deltaQFM_calc']=deltaQFM
+        liqs['logfo2_calc']=logfo2_calc
+    if C5==2: #If specify Fe3Fet
+        deltaQFM=logfo2-25050/T_K+8.58
+        liqs['deltaQFM_calc']=deltaQFM
+
+    if C5==2: # e.g. if Fe3Fet not given
+        Fe2Fet_Liq=1/(1+10**(0.25*deltaQFM-1.36+2*liqs['Na_Liq_cat_frac']+2.4*liqs['Ca_Liq_cat_frac']+3.7*liqs['K_Liq_cat_frac']))
+        liqs['Fe2Fet_Liq_calc']=Fe2Fet_Liq
+    if C5==1: # IF Fe3Fet is given
+        Fe2Fet_Liq=1-Fe3Fet_Liq
+
+    liqs['Fe2_Liq_cat_frac']=liqs['Fet_Liq_cat_frac']*Fe2Fet_Liq
+
+    liqs['LnCS2_calc']=(8.77-23590/T_K+(1673/T_K)*(6.7*(liqs['Na_Liq_cat_frac']+liqs['K_Liq_cat_frac'])
+        +4.9*liqs['Mg_Liq_cat_frac']+8.1*liqs['Ca_Liq_cat_frac']+8.9*(liqs['Fet_Liq_cat_frac']+liqs['Mn_Liq_cat_frac'])
+        +5*liqs['Ti_Liq_cat_frac']+1.8*liqs['Al_Liq_cat_frac']
+        -22.2*liqs['Ti_Liq_cat_frac']*(liqs['Fet_Liq_cat_frac']+liqs['Mn_Liq_cat_frac'])
+            +7.2*((liqs['Fet_Liq_cat_frac']+liqs['Mn_Liq_cat_frac'])*liqs['Si_Liq_cat_frac']))-2.06*erf(-7.2*(liqs['Fet_Liq_cat_frac']+liqs['Mn_Liq_cat_frac'])))
+
+    liqs['LnCS6_calc']=calculate_BW2022_CS6(df=df, T_K=T_K).LnCS6_calc_OM22_format
+
+    liqs['LnKSO2S2']=-55921/T_K+25.07-0.6465*np.log(T_K)
+
+    liqs['LnS6S2']=(liqs['LnCS6_calc']-liqs['LnKSO2S2']-liqs['LnCS2_calc'])+2*np.log(10)*logfo2_calc
+    liqs['S6St_Liq']=1-1/(1+np.exp(liqs['LnS6S2']))
+
+    cols_to_move = ['S6St_Liq', 'LnCS2_calc', 'LnCS6_calc', 'LnKSO2S2', 'LnS6S2',
+                    'deltaQFM_calc']
+    liqs = liqs[cols_to_move +
+                                    [col for col in liqs.columns if col not in cols_to_move]]
+    return liqs
+
