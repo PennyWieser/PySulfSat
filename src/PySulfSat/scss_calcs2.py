@@ -982,7 +982,7 @@ def Loop_Smythe_sulf_calc_residual(single_argx0, FeO_Liq, T_K,  Ni_Liq, Cu_Liq):
     return Residual
 
 
-def calculate_Kiseeva_sulf_comp_kd(Ni_Sulf, Cu_Sulf, FeOt_Liq,  T_K, Fe3Fet_Liq=None):
+def calculate_sulf_kds(Ni_Sulf, Cu_Sulf, FeOt_Liq,  T_K, Fe3Fet_Liq=None):
     '''
     Calculates the Fe, O, S content of the sulfide using Kiseeva et al. (2015). Users can enter Ni, Cu and FeOt
     contents they have measured, or use this function once the
@@ -1672,7 +1672,7 @@ Ni_Liq=None, Cu_Liq=None, df_c=None, Ni_Sulf_init=5, Cu_Sulf_init=5 ):
                                             T_K=T_K, Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, Ni_Sulf_init=Ni_Sulf_init, Cu_Sulf_init=Cu_Sulf_init)
 
             # This feeds those result back into a simpler function to get the Fe, S and O content of the sulfide
-            Sulf_All=calculate_Kiseeva_sulf_comp_kd(Ni_Sulf=calc_sulf['Ni_Sulf'],Cu_Sulf=calc_sulf['Cu_Sulf'],
+            Sulf_All=calculate_sulf_kds(Ni_Sulf=calc_sulf['Ni_Sulf'],Cu_Sulf=calc_sulf['Cu_Sulf'],
                                 FeOt_Liq=df_c['FeOt_Liq'], Fe3Fet_Liq=df_c['Fe3Fet_Liq'],
                                             T_K=T_K)
 

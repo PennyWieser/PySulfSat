@@ -283,7 +283,7 @@ def calculate_BW2022_CS6(*, df, T_K):
         -13736*liqs['Ti_Liq_cat_frac']+3762*liqs['Al_Liq_cat_frac']+34483)/T_K)
     lnK=55921/T_K-25.07+0.6465*np.log(T_K)
 
-    lnCs6_ONeill_Format=np.log(10)*(logCs6+np.log10(10**4))-np.log(lnK)
+    lnCs6_ONeill_Format=logCs6*np.log(10) + np.log10(10**4)*np.log(10)-lnK
     liqs.insert(0, 'LogCS6_calc_BW22_format', logCs6)
     liqs.insert(1, 'LnCS6_calc_OM22_format', lnCs6_ONeill_Format)
 
@@ -347,10 +347,10 @@ def calculate_OM2022_CS6(df, T_K, Fe3Fet_Liq=None, logfo2=None):
     +44200*liqs['K_Liq_cat_frac']+16500*liqs['Fe2_Liq_cat_frac']+12600*liqs['Mn_Liq_cat_frac'])/T_K)
     lnK=55921/T_K-25.07+0.6465*np.log(T_K)
     logCS6_BW22=(LnCS6_calc+lnK)/np.log(10) - np.log10(10**4)
-    logCS6_BW22_SO4=(LnCS6_calc+lnK)/np.log(10) - np.log10(10**4)-np.log10(0.375)
+
     liqs.insert(0, 'LnCS6_calc_OM22_format', LnCS6_calc)
     liqs.insert(1, 'LogCS6_calc_BW22_format', logCS6_BW22 )
-    liqs.insert(1, 'LogCS6_calc_BW22_format_SO4', logCS6_BW22_SO4)
+
     return liqs
 
 def calculate_OM2022_S6St(df, T_K, logfo2=None,
