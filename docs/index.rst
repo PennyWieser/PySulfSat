@@ -62,6 +62,13 @@ Welcome to PySulfSat's documentation!
    Examples/S6_S2_Corrections/S6_S2_Corrections_Nash_Jugo_Kleinsasser
    Examples/S6_S2_Corrections/CS6_S6ST_Correction
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Mantle Melting
+   Examples/Mantle_Melting_Lee_Wieser/Simple_Melting_Cu_S_Ba
+   Examples/Mantle_Melting_Lee_Wieser/Complex_melt_changing_SCSS
+   
+
 
 .. toctree::
    :maxdepth: 2
@@ -72,13 +79,8 @@ Welcome to PySulfSat's documentation!
    Examples/Other_Useful_Functions/Calculating_KDs_Kiseeva
 
 
-   .. toctree::
-   :maxdepth: 2
-   :caption: Mantle Melting
-   Examples/Mantle_Melting_Lee_Wieser/Simple_Melting_Cu_S_Ba
-   Examples/Mantle_Melting_Lee_Wieser/Complex_melt_changing_SCSS
 
-   
+
  .. toctree::
    :maxdepth: 2
    :caption: Benchmarking
