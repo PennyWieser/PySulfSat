@@ -61,6 +61,7 @@ Welcome to PySulfSat's documentation!
 
    Examples/S6_S2_Corrections/S6_S2_Corrections_Nash_Jugo_Kleinsasser
    Examples/S6_S2_Corrections/CS6_S6ST_Correction
+   Examples/Mantle_Melting_Lee_Wieser/Simple_Melting_Cu_S_Ba
 
 .. toctree::
    :maxdepth: 2
