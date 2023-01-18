@@ -6,13 +6,25 @@ import pandas as pd
 st_ratio=1/22.6436 #4.4163750000000000000E-02
  #1/22.220
 
-def convert_d34_to_3432S(d34S=None):
+def convert_d34_to_3432S(d34S, st_ratio):
+    """ Converts d34S to 3432S using a st ratio (34/32S value)
+    """
     S3432=((d34S/1000)+1)*(st_ratio)
     return S3432
 
-def convert_3432S_to_d34(S3432=None):
+def convert_3432S_to_d34(S3432, st_ratio):
+    """ Converts d34S to 3432S using a st ratio (34/32S value)
+    """
     d34S=(((S3432)/(st_ratio)) -1)*1000
     return d34S
+
+def calculate_std_ratio_used(d34S, S3432):
+    """ When you have both a d34S value and a S3432 value,
+    calculates what ratio was used by the study
+    """
+    S3432_standard=(1000*S3432)/(d34S+1000)
+
+    return S3432_standard
 
 
 def crystallize_S_incomp(S_init=1200, F_melt=None):
