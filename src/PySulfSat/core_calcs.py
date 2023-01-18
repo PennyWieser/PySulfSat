@@ -813,3 +813,22 @@ def convert_fe_partition_to_fo2(*, liq_comps, T_K, P_kbar,  model="Kress1991", r
     liq_comps_c.insert(1, 'DeltaNNO', DeltaNNO)
     liq_comps_c.insert(2, 'fo2_calc', fo2_calc)
     return liq_comps_c
+
+
+    ## Converting between S, SO2, SO3 etc.
+
+    mol_mass_SO3=80.06
+    mol_mass_SO4=96.06
+    mol_mass_S=32.065
+    mol_mass_O=15.999
+
+    def convert_S_types(SO3=None, S=None, ):
+        """ converts SO3 in wt% into S in ppm
+        """
+        S_wt= mol_mass_S*SO3/(mol_mass_SO3)
+        S_ppm=S_wt*10**4
+        df=pd.DataFrame(data={'SO3_wt': SO3,
+                                'S_wt': S_wt,
+                                'S_ppm': S_ppm})
+        return df
+
