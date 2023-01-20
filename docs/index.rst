@@ -12,7 +12,9 @@ Welcome to PySulfSat's documentation!
 
    introduction
    installation
+   available_functions_pdf
    importing_data
+   
 
 
 .. toctree::
@@ -76,10 +78,9 @@ Welcome to PySulfSat's documentation!
    :maxdepth: 2
    :caption: Other useful functions
 
-   Examples/S6_S2_Corrections/S6_S2_Corrections_Nash_Jugo_Kleinsasser
-   Examples/S6_S2_Corrections/ONeillMav2022
    Examples/Other_Useful_Functions/Calculating_KDs_Kiseeva
-
+   Examples/Other_Useful_Functions/Converting_S_values
+   Examples/Other_Useful_Functions/Plotting_Cali_Datasets
 
  .. toctree::
    :maxdepth: 2

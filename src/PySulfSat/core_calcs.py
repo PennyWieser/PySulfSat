@@ -4,6 +4,10 @@ import pandas as pd
 import scipy
 import scipy.optimize as optimize
 from scipy.special import erf
+from pathlib import Path
+from pickle import load
+import pickle
+PySulfSat_dir=Path(__file__).parent
 
 
 
@@ -64,6 +68,8 @@ cation_num_liq_hyd_df = pd.DataFrame.from_dict(
 cation_num_liq_hyd_df['Sample_ID_Liq'] = 'CatNum'
 cation_num_liq_hyd_df.set_index('Sample_ID_Liq', inplace=True)
 
+
+## With
 
 
 
@@ -546,6 +552,7 @@ def calculate_Smythe_silicate_mole_fractions(df, Fe3Fet_Liq=None):
 
     return Final_Calc_step
 
+
 ## Redox calculations
 def convert_fo2_to_fe_partition(*, liq_comps, T_K, P_kbar,
                                 model="Kress1991", fo2, renorm=False, fo2_offset=0):
@@ -678,6 +685,19 @@ oxide_mass_liq_hyd_df_redox = pd.DataFrame.from_dict(
 oxide_mass_liq_hyd_df_redox['Sample_ID_Liq'] = 'MolWt'
 oxide_mass_liq_hyd_df_redox.set_index('Sample_ID_Liq', inplace=True)
 
+
+cation_num_liq_hyd_redox = {'SiO2_Liq': 1, 'MgO_Liq': 1, 'MnO_Liq': 1,
+'FeO_Liq': 1, 'Fe2O3_Liq': 2, 'CaO_Liq': 1, 'Al2O3_Liq': 2, 'Na2O_Liq': 2,
+'K2O_Liq': 2, 'TiO2_Liq': 1, 'P2O5_Liq': 2, 'H2O_Liq':2,
+'Cr2O3_Liq':2}
+
+cation_num_liq_hyd_df_redox = pd.DataFrame.from_dict(
+    cation_num_liq_hyd_redox, orient='index').T
+cation_num_liq_hyd_df_redox['Sample_ID_Liq'] = 'CatNum'
+cation_num_liq_hyd_df_redox.set_index('Sample_ID_Liq', inplace=True)
+
+
+
 def calculate_hydrous_mol_proportions_liquid_redox(liq_comps):
     '''Import Liq compositions using liq_comps=My_Liquids, returns anhydrous mole proportions
 
@@ -729,6 +749,99 @@ def calculate_hydrous_mol_fractions_liquid_redox(liq_comps):
     mol_frac_hyd.columns = [str(col).replace('prop', 'frac')
                             for col in mol_frac_hyd.columns]
     return mol_frac_hyd
+
+## Fractions with redox
+
+oxide_mass_liq_hyd_redox = {'SiO2_Liq': 60.0843, 'MgO_Liq': 40.3044,
+'MnO_Liq': 70.9375, 'FeO_Liq': 71.8464, 'Fe2O3_Liq': 159.69, 'CaO_Liq': 56.0774,
+'Al2O3_Liq': 101.961, 'Na2O_Liq': 61.9789, 'K2O_Liq': 94.196,
+'TiO2_Liq': 79.8788, 'P2O5_Liq': 141.944, 'H2O_Liq': 18.02 }
+
+oxide_mass_liq_hyd_redox_df = pd.DataFrame.from_dict(
+    oxide_mass_liq_hyd_redox, orient='index').T
+oxide_mass_liq_hyd_redox_df['Sample_ID_Liq'] = 'MolWt'
+oxide_mass_liq_hyd_redox_df.set_index('Sample_ID_Liq', inplace=True)
+
+
+def calculate_hydrous_cat_proportions_liquid_redox(liq_comps):
+    '''Import Liq compositions using liq_comps=My_Liquids, returns hydrous cation proportions (e.g., mole proportions * no of cations)
+
+   Parameters
+    -------
+
+    liq_comps: pandas.DataFrame
+                Panda DataFrame of liquid compositions with column headings SiO2_Liq, TiO2_Liq etc.
+
+
+    Returns
+    -------
+    pandas DataFrame
+        hydrous cation proportions for the liquid with column headings of the form S_Liq_cat_prop
+
+    '''
+
+    mol_prop_no_cat_num = calculate_hydrous_mol_proportions_liquid_redox(liq_comps)
+    mol_prop_no_cat_num.columns = [str(col).replace(
+        '_mol_prop', '') for col in mol_prop_no_cat_num.columns]
+    ox_num_reindex = cation_num_liq_hyd_df_redox.reindex(
+        oxide_mass_liq_hyd_redox_df.columns, axis=1).fillna(0)
+    df_calc_comb = pd.concat([ox_num_reindex, mol_prop_no_cat_num])
+    cation_prop_hyd = df_calc_comb.multiply(
+        df_calc_comb.loc['CatNum', :], axis='columns').drop(['CatNum'])
+    cation_prop_hyd.columns = [
+        str(col) + '_cat_prop' for col in cation_prop_hyd.columns]
+
+
+
+    return cation_prop_hyd
+
+def calculate_hydrous_cat_fractions_liquid_redox(liq_comps):
+    '''Import Liq compositions using liq_comps=My_Liquids, returns hydrous cation fractions
+
+   Parameters
+    -------
+
+    liq_comps: pandas.DataFrame
+        liquid compositions with column headings SiO2_Liq, TiO2_Liq etc.
+
+
+    Returns
+    -------
+    pandas DataFrame
+        hydrous cation fractions for the liquid with column headings of the form _Liq_cat_frac,
+        as well as the initial dataframe of liquid compositions.
+
+
+    '''
+    cat_prop = calculate_hydrous_cat_proportions_liquid_redox(liq_comps=liq_comps)
+    mol_prop = calculate_hydrous_mol_fractions_liquid_redox(liq_comps=liq_comps)
+
+    cat_prop['sum'] = cat_prop.sum(axis='columns')
+    cat_frac_hyd = cat_prop.div(cat_prop['sum'], axis='rows')
+    cat_frac_hyd.drop(['sum'], axis='columns', inplace=True)
+    cat_frac_hyd.columns = [str(col).replace('prop', 'frac')
+                              for col in cat_frac_hyd.columns]
+    cat_frac_hyd = pd.concat([liq_comps, mol_prop, cat_frac_hyd], axis=1)
+
+
+
+    cation_frac_hyd2=cat_frac_hyd.rename(columns={
+                        'SiO2_Liq_cat_frac': 'Si_Liq_cat_frac',
+                        'TiO2_Liq_cat_frac': 'Ti_Liq_cat_frac',
+                        'Al2O3_Liq_cat_frac': 'Al_Liq_cat_frac',
+                        'FeO_Liq_cat_frac': 'Fe2_Liq_cat_frac',
+                        'Fe2O3_Liq_cat_frac': 'Fe3_Liq_cat_frac',
+                        'MnO_Liq_cat_frac': 'Mn_Liq_cat_frac',
+                        'MgO_Liq_cat_frac': 'Mg_Liq_cat_frac',
+                        'CaO_Liq_cat_frac': 'Ca_Liq_cat_frac',
+                        'Na2O_Liq_cat_frac': 'Na_Liq_cat_frac',
+                        'K2O_Liq_cat_frac': 'K_Liq_cat_frac',
+                        'Cr2O3_Liq_cat_frac': 'Cr_Liq_cat_frac',
+                        'P2O5_Liq_cat_frac': 'P_Liq_cat_frac',
+
+                        })
+
+    return cation_frac_hyd2
 
 
 
@@ -816,19 +929,69 @@ def convert_fe_partition_to_fo2(*, liq_comps, T_K, P_kbar,  model="Kress1991", r
 
 
     ## Converting between S, SO2, SO3 etc.
+mol_mass_S=32.065
+mol_mass_O=15.999
+mol_mass_SO3=mol_mass_S+mol_mass_O*3
+mol_mass_SO4=mol_mass_S+mol_mass_O*4
+mol_mass_SO2=mol_mass_S+mol_mass_O*2
 
-    mol_mass_SO3=80.06
-    mol_mass_SO4=96.06
-    mol_mass_S=32.065
-    mol_mass_O=15.999
+def convert_S_types(SO3_wt=None, SO3_ppm=None, S_wt=None, S_ppm=None, SO2_wt=None, SO2_ppm=None,
+ SO4_wt=None, SO4_ppm=None):
+    """ converts SO3 in wt% into S in ppm
+    """
+    params = {
+        "a": SO3_wt,
+        "ab": SO3_ppm,
+        "b": S_wt,
+        "c": S_ppm,
+        "d": SO2_wt,
+        "de": SO2_ppm,
+        "e": SO4_wt,
+        "f": SO4_ppm
+    }
 
-    def convert_S_types(SO3=None, S=None, ):
-        """ converts SO3 in wt% into S in ppm
-        """
-        S_wt= mol_mass_S*SO3/(mol_mass_SO3)
-        S_ppm=S_wt*10**4
-        df=pd.DataFrame(data={'SO3_wt': SO3,
-                                'S_wt': S_wt,
-                                'S_ppm': S_ppm})
+    not_none_params = {k:v for k, v in params.items() if v is not None}
+    if len(not_none_params)>1:
+        raise TypeError('Please only enter one input type, the function returns a dataframe of all the other outputs')
+
+    else:
+        if S_ppm is not None:
+            moles_s=(S_ppm/10**4)/mol_mass_S
+        if S_wt is not None:
+            moles_s=S_wt/mol_mass_S
+        if SO3_wt is not None:
+            moles_s=SO3_wt/mol_mass_SO3
+        if SO3_ppm is not None:
+            moles_s=(SO3_ppm/10**4)/mol_mass_SO3
+
+        if SO4_wt is not None:
+            moles_s=SO4_wt/mol_mass_SO4
+        if SO4_ppm is not None:
+            moles_s=(SO4_ppm/10**4)/mol_mass_SO4
+
+        if SO2_wt is not None:
+            moles_s=SO2_wt/mol_mass_SO2
+        if SO2_ppm is not None:
+            moles_s=(SO2_ppm/10**4)/mol_mass_SO2
+
+        S_wt2= moles_s*mol_mass_S
+        S_ppm2=S_wt2*10**4
+        SO2=moles_s*mol_mass_SO2
+        SO3=moles_s*mol_mass_SO3
+        SO4=moles_s*mol_mass_SO4
+
+
+        df=pd.DataFrame(data={
+                                'S_wt': S_wt2,
+                                'S_ppm': S_ppm2,
+                                'SO2_wt': SO2,
+                                'SO2_ppm': SO2*10**4,
+                                'SO3_wt': SO3,
+                                'SO3_ppm': SO3*10**4,
+                                'SO4_wt': SO4,
+                                'SO4_ppm': SO4*10**4})
+
+
+
         return df
 

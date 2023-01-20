@@ -88,6 +88,9 @@ def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, sample_l
         my_input_c['Sample_ID_Liq'] = my_input.index
 
     if suffix is not None:
+        if any(my_input.columns.str.contains("FeOT")) and (all(my_input.columns.str.contains("FeOt")==False)):
+            raise ValueError("No FeOt column found. You've got a column heading with FeOT. Change to a lower case t")
+
         my_input_c=my_input_c.add_suffix(suffix)
 
     if any(my_input.columns.str.contains("FeO_")) and (all(my_input.columns.str.contains("FeOt_")==False)):
@@ -111,7 +114,7 @@ def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, sample_l
     print('We have replaced all missing liquid oxides and strings with zeros. ')
 
     cols2=myLiquids1.columns
-    my_input_c=my_input.copy()
+    #my_input_c=my_input.copy()
     for col in cols2:
         if col in my_input_c.columns:
             my_input_c=my_input_c.drop(columns=col)

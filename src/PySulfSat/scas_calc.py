@@ -158,8 +158,8 @@ def calculate_ZT2022_SCAS(*, df, T_K, H2O_Liq=None):
 
 ## Masotta et al. (2013) calculations
 def calculate_MK2015_SCAS(liq_comps, T_K):
-    """ Calculates S6+ dissolved in the melt using Masotta et al. 2014,
-    doi: http://dx.doi.org/10.1016/j.gca.2015.02.0330
+    """ Calculates S6+ dissolved in the melt using Masotta and Kepler (2015)
+    doi: https://doi.org/10.1016/j.gca.2015.02.033
 
     Parameters
     -------

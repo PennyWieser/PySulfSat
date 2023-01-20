@@ -3,22 +3,22 @@ import numpy as np
 import pandas as pd
 
 
-st_ratio=1/22.6436 #4.4163750000000000000E-02
- #1/22.220
+st_ratio=1/22.6436 # From https://doi.org/10.1016/S0016-7037(01)00611-1
 
-def convert_d34_to_3432S(d34S, st_ratio):
+
+def convert_d34_to_3432S(d34S, st_ratio=1/22.6436):
     """ Converts d34S to 3432S using a st ratio (34/32S value)
     """
     S3432=((d34S/1000)+1)*(st_ratio)
     return S3432
 
-def convert_3432S_to_d34(S3432, st_ratio):
+def convert_3432S_to_d34(S3432, st_ratio=1/22.6436):
     """ Converts d34S to 3432S using a st ratio (34/32S value)
     """
     d34S=(((S3432)/(st_ratio)) -1)*1000
     return d34S
 
-def calculate_std_ratio_used(d34S, S3432):
+def calculate_std_ratio_used(d34S, S3432=1/22.6436):
     """ When you have both a d34S value and a S3432 value,
     calculates what ratio was used by the study
     """
