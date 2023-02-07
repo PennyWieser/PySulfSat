@@ -2,7 +2,7 @@ import unittest
 import pandas as pd
 import PySulfSat as ss
 
-# Setting a liquid composition
+## Setting a liquid composition
 
 Liq_test=pd.DataFrame(data={'SiO2_Liq': 52.72,
                             'TiO2_Liq': 2.08,
@@ -18,6 +18,52 @@ Liq_test=pd.DataFrame(data={'SiO2_Liq': 52.72,
                             'P_kbar':0.01,
                            'H2O_Liq': 0}, index=[0])
 decimalPlace=4
+
+## Things for mantle melting
+
+Modes=pd.DataFrame(data={'ol': 0.6, 'opx': 0.2,
+       'cpx': 0.18, 'sp': 0.02, 'gt': 0}, index=[0])
+
+KDs_Cu=pd.DataFrame(data={'element': 'Cu',
+        'ol': 0.048, 'opx': 0.034,
+        'cpx': 0.043, 'sp': 0.223,
+        'gt': 0, 'sulf': 800}, index=[0])
+
+S_Sulf = 33*(10**4)
+
+
+class test_mantlemelt(unittest.TestCase):
+    def test_Simple_mantle_Cu(self):
+        self.assertAlmostEqual(ss.Lee_Wieser_sulfide_melting(Modes=Modes, KDs=KDs_Cu,
+                        N=100, S_Mantle=[200],
+                        S_Sulf=S_Sulf, S_Melt_SCSS_2=1000,
+                        elem_Per=30, Prop_S6=0)['Cu_Melt_Agg'][3], 59.205447166128984,
+decimalPlace, "Inst Cu doesnt match test value")
+
+    def test_Simple_mantle_S(self):
+        self.assertAlmostEqual(ss.Lee_Wieser_sulfide_melting(Modes=Modes, KDs=KDs_Cu,
+                        N=100, S_Mantle=[200],
+                        S_Sulf=S_Sulf, S_Melt_SCSS_2=1000,
+                        elem_Per=30, Prop_S6=0)['S_Residue'][3], 175.2577319587629,
+decimalPlace, "Residual S doesnt match test value")
+
+
+
+class test_SCSS_SCAS_Total(unittest.TestCase):
+    def test_SCSS_SCAS_Jugo(self):
+        self.assertAlmostEqual(ss.calculate_S_Total_SCSS_SCAS(deltaQFM=0.3,
+            SCSS=1000, SCAS=5000, model='Jugo')['Total_S'][0], 1031.6227766016839,
+decimalPlace, "ST from Jugo doesnt match test value")
+
+    def test_SCSS_SCAS_Nash(self):
+        self.assertAlmostEqual(ss.calculate_S_Total_SCSS_SCAS(Fe3Fet_Liq=Liq_test['Fe3Fet_Liq'], T_K=Liq_test['T_K'],
+            SCSS=1000, SCAS=5000, model='Nash')['Total_S'][0], 1006.9936479729372,
+decimalPlace, "ST from Nash doesnt match test value")
+
+    def test_SCSS_SCAS_Nash_higher(self):
+        self.assertAlmostEqual(ss.calculate_S_Total_SCSS_SCAS(Fe3Fet_Liq=Liq_test['Fe3Fet_Liq']*5, T_K=Liq_test['T_K'],
+            SCSS=1000, SCAS=5000, model='Nash')['Total_S'][0], 5000.02347426457,
+decimalPlace, "ST from Nash doesnt match test value")
 
 class test_S6_corrections(unittest.TestCase):
     def test_s6_Jugo(self):

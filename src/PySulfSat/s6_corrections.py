@@ -226,17 +226,27 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
     SCSS_S6_cont=SCSS_Tot-SCSS
     SCAS_S2_cont=SCAS_Tot-SCAS
 
-    print(SCSS_Tot)
+    if isinstance(SCSS_Tot, float):
+        df_Species=pd.DataFrame(data={'deltaQFM': deltaQFM,
+                                    'S6St_Liq': S6St_Liq,
+                                    'SCSS_2': SCSS,
+                                'SCAS_6': SCAS,
+                                'SCSS_Tot': SCSS_Tot,
+                                'SCAS_Tot': SCAS_Tot,
+                                    'S6 in SCSS_Tot': SCSS_S6_cont,
+                                'S2 in SCAS_Tot': SCAS_S2_cont
+                                }, index=[0])
+    else:
 
-    df_Species=pd.DataFrame(data={'deltaQFM': deltaQFM,
-                                  'S6St_Liq': S6St_Liq,
-                                  'SCSS_2': SCSS,
-                              'SCAS_6': SCAS,
-                              'SCSS_Tot': SCSS_Tot,
-                              'SCAS_Tot': SCAS_Tot,
-                                 'S6 in SCSS_Tot': SCSS_S6_cont,
-                               'S2 in SCAS_Tot': SCAS_S2_cont
-                              })
+        df_Species=pd.DataFrame(data={'deltaQFM': deltaQFM,
+                                    'S6St_Liq': S6St_Liq,
+                                    'SCSS_2': SCSS,
+                                'SCAS_6': SCAS,
+                                'SCSS_Tot': SCSS_Tot,
+                                'SCAS_Tot': SCAS_Tot,
+                                    'S6 in SCSS_Tot': SCSS_S6_cont,
+                                'S2 in SCAS_Tot': SCAS_S2_cont
+                                })
 
     # Cant have more S6 than the SCAS
 
