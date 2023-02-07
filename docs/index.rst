@@ -28,6 +28,7 @@ Welcome to PySulfSat's documentation!
    :caption: Mantle Melting
 
    Examples/Mantle_Melting_Lee_Wieser/Simple_Melting_Cu_S_Ba
+   Examples/Mantle_Melting_Lee_Wieser/Complex_melt_changing_SCSS
 
 .. toctree::
    :maxdepth: 2
