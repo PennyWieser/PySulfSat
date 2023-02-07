@@ -69,15 +69,6 @@ Welcome to PySulfSat's documentation!
    Examples/S6_S2_Corrections/S6_S2_Corrections_Nash_Jugo_Kleinsasser
    Examples/S6_S2_Corrections/CS6_S6ST_Correction
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Other useful functions
-
-   Examples/Other_Useful_Functions/Calculating_KDs_Kiseeva
-   Examples/Other_Useful_Functions/Converting_S_values
-   Examples/Other_Useful_Functions/Plotting_Cali_Datasets
-
-
 
 
 .. toctree::
@@ -93,7 +84,20 @@ Welcome to PySulfSat's documentation!
  .. toctree::
    :maxdepth: 2
    :caption: Benchmarking
+
    Benchmarking/Boulling_Wood_2022/BW_2022
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Other useful functions
+
+   Examples/Other_Useful_Functions/Calculating_KDs_Kiseeva
+   Examples/Other_Useful_Functions/Converting_S_values
+   Examples/Other_Useful_Functions/Plotting_Cali_Datasets
+
+
+
 
 
 
