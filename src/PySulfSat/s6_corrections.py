@@ -202,32 +202,34 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
                                                            deltaQFM=deltaQFM)
         SCAS_Tot=calculate_S_Tot_Kleinsasser2022_dacite(SCAS=SCAS,
                                                            deltaQFM=deltaQFM)
-        S6_St=np.nan
+        S6St_Liq=np.nan
     else:
         if model =="Jugo":
-            S6_St=calculate_S6St_Jugo2010_eq10(deltaQFM=deltaQFM)
+            S6St_Liq=calculate_S6St_Jugo2010_eq10(deltaQFM=deltaQFM)
 
         if model =="Nash":
             if T_K is None:
                 raise Exception('Need a T_K input to use Nash')
             if Fe3Fet_Liq is None:
                 raise Exception('Need a Fe3Fet_Liq input to use Nash')
-            S6_St=calculate_S6St_Nash2019(T_K=T_K, Fe3Fet_Liq=Fe3Fet_Liq)
+            S6St_Liq=calculate_S6St_Nash2019(T_K=T_K, Fe3Fet_Liq=Fe3Fet_Liq)
 
         if S6St_Liq is not None:
-            S6_St=S6St_Liq
+            S6St_Liq=S6St_Liq
 
 
-        SCSS_Tot=calculate_SCSS_Total(SCSS=SCSS, S6St_Liq=S6_St)
-        SCAS_Tot=calculate_SCAS_Total(SCAS=SCAS, S2St_Liq=1-S6_St)
+        SCSS_Tot=calculate_SCSS_Total(SCSS=SCSS, S6St_Liq=S6St_Liq)
+        SCAS_Tot=calculate_SCAS_Total(SCAS=SCAS, S2St_Liq=1-S6St_Liq)
 
 
 
     SCSS_S6_cont=SCSS_Tot-SCSS
     SCAS_S2_cont=SCAS_Tot-SCAS
 
+    print(SCSS_Tot)
+
     df_Species=pd.DataFrame(data={'deltaQFM': deltaQFM,
-                                  'S6_St': S6_St,
+                                  'S6St_Liq': S6St_Liq,
                                   'SCSS_2': SCSS,
                               'SCAS_6': SCAS,
                               'SCSS_Tot': SCSS_Tot,
@@ -257,8 +259,8 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
     SCAS_higher=df_Species['SCAS_Tot_check']>df_Species['SCSS_Tot_check']
     df_Species.loc[SCAS_higher, 'Total_S']=df_Species['SCSS_Tot_check']
 
-    df_Species.insert(1, 'S2_Tot', df_Species['Total_S']*(1-df_Species['S6_St']))
-    df_Species.insert(2, 'S6_Tot', df_Species['Total_S']*(df_Species['S6_St']))
+    df_Species.insert(1, 'S2_Tot', df_Species['Total_S']*(1-df_Species['S6St_Liq']))
+    df_Species.insert(2, 'S6_Tot', df_Species['Total_S']*(df_Species['S6St_Liq']))
 
     df_Species2=df_Species.copy()
     df_Species2.drop(['SCAS_Tot_check', 'SCSS_Tot_check', 'SCSS_Tot_check'], axis=1, inplace=True)

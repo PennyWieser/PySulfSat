@@ -342,7 +342,7 @@ highT=False, lowT=False):
 
 def calculate_B2021_SCSS(*, df, T_K, P_kbar, Fe_FeNiCu_Sulf=None,  Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, H2O_Liq=None,
 Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=None,
-Ni_Liq=None, Cu_Liq=None):
+Ni_Liq=None, Cu_Liq=None, Fe3Fet_Liq=None):
     '''
     Calculates SCSS using the model of Blanchard et al. 2021
     doi: https://doi.org/10.2138/am-2021-7649
@@ -365,7 +365,7 @@ Ni_Liq=None, Cu_Liq=None):
 
 
     H2O_Liq: int, float, pandas series (optional)
-        Overwrites H2O in the user entered dataframe
+        Overwrites H2O in the user entered dataframes
 
     Sulfide Composition: Options to calculate from the liquid composition, enter the comp in el wt%,
     or enter the FeFeNiCu, Cu
@@ -436,7 +436,10 @@ Ni_Liq=None, Cu_Liq=None):
     A_K_m2=-34641
     A_H_m2=-22677
     A_SiFe_m2=120662
+
     Liqs=df.copy()
+    if H2O_Liq is not None:
+        Liqs['H2O_Liq']=H2O_Liq
 
     Liqs=calculate_sulfide_comp_generic(
     Fe_Sulf=Fe_Sulf, Ni_Sulf=Ni_Sulf, Cu_Sulf=Cu_Sulf, Fe_FeNiCu_Sulf=Fe_FeNiCu_Sulf,
@@ -479,14 +482,14 @@ Ni_Liq=None, Cu_Liq=None):
                     )
     SCSS_eq12=np.exp(lnSCSS_equation12)
 
-    Liqs.insert(0, 'SCSS_eq11', SCSS_eq11)
-    Liqs.insert(1, 'SCSS_eq12', SCSS_eq12)
+    Liqs.insert(0, 'SCSS2_ppm_eq11', SCSS_eq11)
+    Liqs.insert(1, 'SCSS2_ppm_eq12', SCSS_eq12)
 
     return Liqs
 
 ## Fortin et al. (2015) SCSS Calculation
 
-def calculate_F2015_SCSS(df, T_K, P_kbar, H2O_Liq=None):
+def calculate_F2015_SCSS(df, T_K, P_kbar, H2O_Liq=None, Fe3Fet_Liq=None,Fe_FeNiCu_Sulf=None ):
     '''
     Calculates SCSS using the model of Fortin et al. (2015).
     doi: http://dx.doi.org/10.1016/j.gca.2015.03.0220
@@ -507,12 +510,18 @@ def calculate_F2015_SCSS(df, T_K, P_kbar, H2O_Liq=None):
     P_kbar: int, float, pandas.Series
         Pressure in kbar
 
+    Fe3Fet_Liq, Fe_FeNiCu_Sulf - Doesnt use these values. here for consistency with other functions
+
     Returns
     -----------
     pandas.DataFrame
         Calculated SCSS, mol fractions, and input compositions.
 
     '''
+    if Fe3Fet_Liq is not None:
+        w.warn('F2015 doesnt use your inputted Fe3Fet_Liq value')
+    if Fe_FeNiCu_Sulf is not None:
+        w.warn('F2015 doesnt use your inputted sulfide comp')
 
     df_c=df.copy()
     if H2O_Liq is not None:
@@ -533,7 +542,7 @@ def calculate_F2015_SCSS(df, T_K, P_kbar, H2O_Liq=None):
 (mol_fracs['H2O_Liq_mol_frac']*-20.3934))
     SCSS_Calc=np.exp(Ln_SCSS_Calc)
     out=pd.concat([mol_fracs, df_c], axis=1)
-    out.insert(0, 'SCSS_ppm_Fortin2015', SCSS_Calc)
+    out.insert(0, 'SCSS2_ppm', SCSS_Calc)
     return out
 ## Liu et al. 2021 SCSS calculations
 def calculate_Liu2021_SCSS(df, T_K, P_kbar, Fe_FeNiCu_Sulf=None, H2O_Liq=None, Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None,
@@ -590,16 +599,21 @@ Ni_Liq=None, Cu_Liq=None, Fe_Sulf=None, Cu_Sulf=None, Ni_Sulf=None, Ni_Sulf_init
 
 
     '''
-    df_c=df.copy()
 
+
+    df_c=df.copy()
+    if H2O_Liq is not None:
+        df_c['H2O_Liq']=H2O_Liq
     Fe_FeNiCu_Sulf_calc=calculate_sulfide_comp_generic(
     Fe_Sulf=Fe_Sulf, Ni_Sulf=Ni_Sulf, Cu_Sulf=Cu_Sulf, Fe_FeNiCu_Sulf=Fe_FeNiCu_Sulf,
     Cu_FeNiCu_Sulf=Cu_FeNiCu_Sulf, Ni_FeNiCu_Sulf=Ni_FeNiCu_Sulf,
-    Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, df_c=df_c)
+    Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, df_c=df_c, T_K=T_K)
 
-    scss=Fe_FeNiCu_Sulf_calc*np.exp(13.88-9744/T_K-328*(P_kbar/10)/T_K)+104*H2O_Liq
 
-    df_c.insert(0, 'SCSS_calc', scss)
+
+    scss=Fe_FeNiCu_Sulf_calc['Fe_FeNiCu_Sulf_calc'].astype(float)*np.exp(13.88-9744/T_K.astype(float)-328*(P_kbar.astype(float)/10)/T_K.astype(float))+104*df_c['H2O_Liq']
+
+    df_c.insert(0, 'SCSS2_ppm', scss)
     return df_c
 
 ## ONeill 2021 SCSS calculations
@@ -1589,7 +1603,7 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
 
 ## Generic function for calculating sulfide composition
 
-def calculate_sulfide_comp_generic(*, T_K,
+def calculate_sulfide_comp_generic(*, T_K=None,
 Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=None, Fe_FeNiCu_Sulf=None, Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None,
 Ni_Liq=None, Cu_Liq=None, df_c=None, Ni_Sulf_init=5, Cu_Sulf_init=5 ):
     """ Generic function for calculating sulfide composition,
@@ -1626,7 +1640,22 @@ Ni_Liq=None, Cu_Liq=None, df_c=None, Ni_Sulf_init=5, Cu_Sulf_init=5 ):
 
 
     """
+    # Check they have entered enough info
+    if Fe_FeNiCu_Sulf is not None and not isinstance(Fe_FeNiCu_Sulf, str):
+        method='entered sulfide ratio'
+    elif Ni_Sulf is not None and Fe_Sulf is not None and Cu_Sulf is not None:
+        method='entered sulf comp'
+    elif isinstance(Fe_FeNiCu_Sulf, str):
+
+        if Fe_FeNiCu_Sulf != 'Calc_Smythe' and Fe_FeNiCu_Sulf != 'Calc_ONeill':
+            raise ValueError('Enter either Calc_Smythe or Calc_ONeill')
+        method='sulfide model'
+        if Ni_Liq is None or Cu_Liq is None:
+            raise ValueError('If you have choosen a sulfide model, you need to enter Ni_Liq and Cu_Liq ')
+    else:
+        raise ValueError('You need to enter some form of sulfide comp for this model, or choose a model and supply Ni and Cu in the liquid')
     # First, if the user entered an integer or float for Ni and Cu, turn into a panda series
+
     if isinstance(Ni_Liq, int) is True or isinstance(Ni_Liq, float) is True:
         Ni_Liq=pd.Series(Ni_Liq, index=range(len(df_c)))
     if isinstance(Cu_Liq, int) is True or isinstance(Cu_Liq, float) is True:
@@ -1665,6 +1694,8 @@ Ni_Liq=None, Cu_Liq=None, df_c=None, Ni_Sulf_init=5, Cu_Sulf_init=5 ):
     # If its a model, do this.
     if isinstance(Fe_FeNiCu_Sulf, str):
         if Fe_FeNiCu_Sulf=="Calc_Smythe":
+            if T_K is None:
+                raise ValueError('you need to enter a  temperature using the arguement T_K to use this model')
 
 
             # This does the Scipy minimisation of Cu and Ni contents using Kiseeva et al. (2015)

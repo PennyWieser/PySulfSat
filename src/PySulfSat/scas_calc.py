@@ -4,6 +4,7 @@ import pandas as pd
 import scipy
 import scipy.optimize as optimize
 from scipy.special import erf
+import warnings as w
 
 
 
@@ -26,7 +27,7 @@ def norm_liqs_with_H2O(Liqs):
     return Liqs_norm
 
 
-def calculate_CD2019_SCAS(*, df, T_K, H2O_Liq=None):
+def calculate_CD2019_SCAS(*, df, T_K, H2O_Liq=None, Fe3Fet_Liq=None, P_kbar=None):
     """" Calculates SCAS using the model of Chowdhury and Dasgupta, 2019
 
 
@@ -42,7 +43,7 @@ def calculate_CD2019_SCAS(*, df, T_K, H2O_Liq=None):
     H2O_Liq: int, float, pandas.Series
         Option input, overwrites H2O_Liq in input dataframe
 
-
+    Fe3Fet_Liq, P_kbar not required, here for consistency with other functions
 
 
     Returns
@@ -50,9 +51,15 @@ def calculate_CD2019_SCAS(*, df, T_K, H2O_Liq=None):
     df of input dataframe, with new column heading "Calc SCAS (ppm)"
 
     """
+    if P_kbar is not None:
+        w.warn('you entered a P_kbar, just be aware this function isnt actually pressure sensitive')
+    if Fe3Fet_Liq is not None:
+        w.warn('you entered a Fe3Fet_Liq, just be aware this function isnt actually redox sensitive')
 
 
     df_c=df.copy()
+    if H2O_Liq is not None:
+        df_c['H2O_Liq']=H2O_Liq
     df_norm=norm_liqs_with_H2O(Liqs=df_c)
     hyd_prop=calculate_hydrous_mol_proportions_liquid(liq_comps=df_norm)
     sum_hyd_prop=hyd_prop.sum(axis=1)
@@ -85,13 +92,13 @@ def calculate_CD2019_SCAS(*, df, T_K, H2O_Liq=None):
     # print(len(SCASppm))
     out=pd.concat([df_c, hyd_prop, hyd_frac], axis=1)
 
-    out.insert(0, 'Calc SCAS (ppm)', SCASppm)
+    out.insert(0, 'SCAS6_ppm', SCASppm)
     out.insert(1, 'lnXS', lnXS)
     out.insert(2, 'Xs', Xs)
     out.insert(3, 'molesS', molesS)
     return out
 
-def calculate_ZT2022_SCAS(*, df, T_K, H2O_Liq=None):
+def calculate_ZT2022_SCAS(*, df, T_K, H2O_Liq=None, Fe3Fet_Liq=None, P_kbar=None):
     """" Calculates SCAS using the model of Zajacz and Tsay, 2022
 
     Parameters
@@ -107,7 +114,7 @@ def calculate_ZT2022_SCAS(*, df, T_K, H2O_Liq=None):
         Option input, overwrites H2O_Liq in input dataframe
 
 
-
+    Fe3Fet_Liq, P_kbar not required, here for consistency with other functions
 
     Returns
     -------
@@ -115,6 +122,10 @@ def calculate_ZT2022_SCAS(*, df, T_K, H2O_Liq=None):
 
     """
 
+    if P_kbar is not None:
+        w.warn('you entered a P_kbar, just be aware this function isnt actually pressure sensitive')
+    if Fe3Fet_Liq is not None:
+        w.warn('you entered a Fe3Fet_Liq, just be aware this function isnt actually redox sensitive')
 
     df_c=df.copy()
     df_c['MnO_Liq']=0
@@ -151,24 +162,26 @@ def calculate_ZT2022_SCAS(*, df, T_K, H2O_Liq=None):
     XSmelt=Ksp/hyd_frac['CaO_Liq_mol_frac']
     Smelt=XSmelt*sum_hyd_prop*32.07*10000
 
-    df_c.insert(0, 'Calc SCAS (ppm)', Smelt)
+    df_c.insert(0, 'SCAS6_ppm', Smelt)
 
     return df_c
 
 
 ## Masotta et al. (2013) calculations
-def calculate_MK2015_SCAS(liq_comps, T_K):
+def calculate_MK2015_SCAS(df, T_K, H2O_Liq=None, Fe3Fet_Liq=None, P_kbar=None):
     """ Calculates S6+ dissolved in the melt using Masotta and Kepler (2015)
     doi: https://doi.org/10.1016/j.gca.2015.02.033
 
     Parameters
     -------
 
-    liq_comps: pandas.DataFrame
+    df: pandas.DataFrame
                 Panda DataFrame of liquid compositions with column headings SiO2_Liq, TiO2_Liq etc.
 
     T_K: int, float, pandas.Series
         Temperature in Kelvin
+
+    Fe3Fet_Liq, P_kbar not required, here for consistency with other functions
 
 
     Returns
@@ -177,10 +190,18 @@ def calculate_MK2015_SCAS(liq_comps, T_K):
     calculations, and input dataframe
     """
 
-    df=liq_comps.copy()
-    mol_prop=calculate_anhydrous_mol_proportions_liquid(liq_comps=df)
-    mol_frac=calculate_anhydrous_mol_fractions_liquid(liq_comps=df)
-    cat_frac=calculate_anhydrous_cat_fractions_liquid(liq_comps=df)
+    if P_kbar is not None:
+        w.warn('you entered a P_kbar, just be aware this function isnt actually pressure sensitive')
+    if Fe3Fet_Liq is not None:
+        w.warn('you entered a Fe3Fet_Liq, just be aware this function isnt actually redox sensitive')
+
+
+    df_c=df.copy()
+    if H2O_Liq is not None:
+        df['H2O_Liq']=H2O_Liq
+    mol_prop=calculate_anhydrous_mol_proportions_liquid(liq_comps=df_c)
+    mol_frac=calculate_anhydrous_mol_fractions_liquid(liq_comps=df_c)
+    cat_frac=calculate_anhydrous_cat_fractions_liquid(liq_comps=df_c)
 
     mol_prop_sum = mol_prop.sum(axis='columns')
 
@@ -194,19 +215,18 @@ def calculate_MK2015_SCAS(liq_comps, T_K):
     +cat_frac['Al_Liq_cat_frac']))
 
     LnKps=(8.95+-146.5*NBOT+(-26960/(T_K))+197200*NBOT*(1/(T_K))
-           +0.409*liq_comps['H2O_Liq'])
+           +0.409*df_c['H2O_Liq'])
 
     # Wont match exactly as they include SO3 in their sum, which we dont know
-    CaO_MF=((liq_comps['CaO_Liq']/56.0774)/(mol_prop_sum-mol_prop['CaO_Liq_mol_prop']
-            +liq_comps['CaO_Liq']/56.0774))
+    CaO_MF=((df_c['CaO_Liq']/56.0774)/(mol_prop_sum-mol_prop['CaO_Liq_mol_prop']
+            +df_c['CaO_Liq']/56.0774))
     SO3_MF=np.exp(LnKps)/CaO_MF
     C_SO3_melt=SO3_MF*(mol_prop_sum-mol_prop['CaO_Liq_mol_prop']
-                +liq_comps['CaO_Liq']/56.0774)*80.066
+                +df_c['CaO_Liq']/56.0774)*80.066
     S_melt_wt=C_SO3_melt*0.40048
     S_melt_ppm=S_melt_wt*10000
 
-    new=pd.DataFrame(data={'S_melt_ppm': S_melt_ppm,
-                              'S_melt_wt': S_melt_wt,
+    new=pd.DataFrame(data={'SCAS6_ppm': S_melt_ppm,
                               'C_SO3_melt': C_SO3_melt,
                               'SO3_MF': SO3_MF,
                               'CaO_MF': CaO_MF,
