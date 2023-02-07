@@ -30,10 +30,42 @@ This video shows how to perform SCSS and SCAS calculations for a Petrolog3 fract
     <iframe width="560" height="315" src="https://www.youtube.com/embed/MOQTw_6praE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 ---------
 
-Integrating PySulfSat witn PyMELTScalc
+Integrating PySulfSat with PyMELTScalc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This video shows how to integrate MELTS calculations and SCSS calculations in a single Jupyter Notebook.
 
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/CJTl09zMnjE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+---------
+
+
+Accounting for presence of both S species (2- and 6+)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This video shows how to correct modelled SCSS and SCAS values into total S contents
+
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/CJTl09zMnjE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+---------
+
+Modelling Mantle Melting
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This video shows how to model Cu and Ba behavoir during mantle melting in the presence of different amounts of sulfur.
+
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/CJTl09zMnjE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+---------
+
+
+This video shows a more complex example where the silicate melt modes are changing (from Thermocalc)
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/CJTl09zMnjE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+---------
+
+This video shows a more complex example where the silicate melt modes are changing (from Thermocalc)
 .. raw:: html
 
     <iframe width="560" height="315" src="https://www.youtube.com/embed/CJTl09zMnjE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
