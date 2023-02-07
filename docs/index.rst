@@ -25,13 +25,6 @@ Welcome to PySulfSat's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Mantle Melting
-
-   Examples/Mantle_Melting_Lee_Wieser/Simple_Melting_Cu_S_Ba
-   Examples/Mantle_Melting_Lee_Wieser/Complex_melt_changing_SCSS
-
-.. toctree::
-   :maxdepth: 2
    :caption: Data Input Options
 
    Examples/Data_Input/Importing_MeltsTBL
@@ -54,9 +47,16 @@ Welcome to PySulfSat's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Integrating SCSS modelling/MI/Sulfide Chemistry
+   :caption: Integrating SCSS modelling, MI, Sulfide Chemistry
 
    Examples/Sulf_Evolution_During_FC/Sulfide_sat_magma_evolution_Iceland
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Mantle Melting
+
+   Examples/Mantle_Melting_Lee_Wieser/Simple_Melting_Cu_S_Ba
+   Examples/Mantle_Melting_Lee_Wieser/Complex_melt_changing_SCSS
 
 .. toctree::
    :maxdepth: 2
@@ -67,7 +67,7 @@ Welcome to PySulfSat's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Mantle Melting
+   :caption: Mantle Melting2
 
    Examples/Mantle_Melting_Lee_Wieser/Simple_Melting_Cu_S_Ba
 
