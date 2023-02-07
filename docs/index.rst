@@ -14,7 +14,7 @@ Welcome to PySulfSat's documentation!
    installation
    available_functions_pdf
    importing_data
-   
+
 
 
 .. toctree::
@@ -22,6 +22,15 @@ Welcome to PySulfSat's documentation!
    :caption: Narrated YouTube Videos
 
    youtube
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Data Input Options2
+
+   Examples/Other_Useful_Functions/Calculating_KDs_Kiseeva
+   Examples/Other_Useful_Functions/Converting_S_values
+   Examples/Other_Useful_Functions/Plotting_Cali_Datasets
+
 
 .. toctree::
    :maxdepth: 2
@@ -64,13 +73,6 @@ Welcome to PySulfSat's documentation!
    Examples/S6_S2_Corrections/S6_S2_Corrections_Nash_Jugo_Kleinsasser
    Examples/S6_S2_Corrections/CS6_S6ST_Correction
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Other useful functions
-
-   Examples/Other_Useful_Functions/Calculating_KDs_Kiseeva
-   Examples/Other_Useful_Functions/Converting_S_values
-   Examples/Other_Useful_Functions/Plotting_Cali_Datasets
 
  .. toctree::
    :maxdepth: 2
@@ -84,7 +86,7 @@ Welcome to PySulfSat's documentation!
 
    Examples/Mantle_Melting_Lee_Wieser/Simple_Melting_Cu_S_Ba
    Examples/Mantle_Melting_Lee_Wieser/Complex_melt_changing_SCSS
-   
+
 
 
 
