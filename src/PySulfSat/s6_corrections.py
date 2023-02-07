@@ -6,8 +6,8 @@ import scipy
 import scipy.optimize as optimize
 from scipy.special import erf
 
-#import warnings
-#warnings.simplefilter('error')
+# import warnings
+# warnings.simplefilter('error')
 
 
 
@@ -237,6 +237,8 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
                               })
 
     # Cant have more S6 than the SCAS
+
+
     toomuchS6=df_Species['S6 in SCSS_Tot']>df_Species['SCAS_6']
     df_Species['SCSS_Tot_check']=df_Species['SCSS_Tot']
     df_Species.loc[toomuchS6, 'SCSS_Tot_check']=df_Species['SCAS_6']+df_Species['SCSS_2']
@@ -244,6 +246,10 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
     # Cant have more S2- than the SCSS
     toomuchS2=df_Species['S2 in SCAS_Tot']>df_Species['SCSS_2']
     df_Species['SCAS_Tot_check']=df_Species['SCAS_Tot']
+    # Ignore this error for now, seems a panda issue. wasted a lot of time on it.
+
+    df_Species['SCAS_6'] = pd.to_numeric(df_Species['SCAS_6'], errors='coerce')
+    df_Species['SCSS_2'] = pd.to_numeric(df_Species['SCSS_2'], errors='coerce')
     df_Species.loc[toomuchS2, 'SCAS_Tot_check']=df_Species['SCAS_6']+df_Species['SCSS_2']
 
     #Set as the minimum one

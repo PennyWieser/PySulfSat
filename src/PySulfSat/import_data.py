@@ -39,6 +39,7 @@ def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, sample_l
         df2=df.drop(['FeO_Liq', 'Fe2O3_Liq'], axis=1)
         df2['T_K']=df2['Temperature']+273.15
         df2['P_kbar']=df2['Pressure(kbar)']
+        df2['Fraction_melt']=df2['Melt_%_magma']/100
         my_input=df2
 
 

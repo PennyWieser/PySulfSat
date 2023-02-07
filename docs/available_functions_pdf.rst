@@ -8,4 +8,4 @@ https://github.com/PennyWieser/PySulfSat/blob/main/docs/Available_Models.pdf
 
 This is the best reference, as it will be updated as we add more models! You can easily download it using this 'download button', and then can ctrlF for your function of interest!
 
-.. image:: img/Download_Github.jpg
+.. image:: Download_Github.jpg
