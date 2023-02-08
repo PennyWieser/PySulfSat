@@ -85,7 +85,7 @@ class test_SCSS_calc_sulfide(unittest.TestCase):
 T_K=Liq_test['T_K'], P_kbar=Liq_test['P_kbar'],
 Ni_Liq=100, Cu_Liq=150,
 Fe3Fet_Liq=Liq_test['Fe3Fet_Liq'],
-Fe_FeNiCu_Sulf='Calc_Smythe')['SCSS_ideal_ppm_Smythe2017'][0], 968.5364514652154,
+Fe_FeNiCu_Sulf='Calc_Smythe')['SCSS2_ppm_ideal_ppm_Smythe2017'][0], 968.5364514652154,
 decimalPlace, "SCSS calculated from Smythe2017 using Calc Sulf Smythe not equal to test value")
 
     def test_Smythe2017_calcsulf_ONeill(self):
@@ -93,7 +93,7 @@ decimalPlace, "SCSS calculated from Smythe2017 using Calc Sulf Smythe not equal 
 T_K=Liq_test['T_K'], P_kbar=Liq_test['P_kbar'],
 Ni_Liq=100, Cu_Liq=150,
 Fe3Fet_Liq=Liq_test['Fe3Fet_Liq'],
-Fe_FeNiCu_Sulf='Calc_ONeill')['SCSS_ideal_ppm_Smythe2017'][0], 930.3940622962762,
+Fe_FeNiCu_Sulf='Calc_ONeill')['SCSS2_ppm_ideal_ppm_Smythe2017'][0], 930.3940622962762,
 decimalPlace, "SCSS calculated from Smythe2017 using Calc Sulf Smythe not equal to test value")
 
     def test_O2021_calcsulf_ONeill(self):
@@ -140,7 +140,7 @@ class test_SCSS_fixed_sulfide(unittest.TestCase):
         self.assertAlmostEqual(ss.calculate_S2017_SCSS(df=Liq_test,
 T_K=Liq_test['T_K'], P_kbar=Liq_test['P_kbar'],
 Fe3Fet_Liq=Liq_test['Fe3Fet_Liq'],
-Fe_FeNiCu_Sulf=0.65)['SCSS_ideal_ppm_Smythe2017'][0], 971.1628818423652,
+Fe_FeNiCu_Sulf=0.65)['SCSS2_ppm_ideal_ppm_Smythe2017'][0], 971.1628818423652,
 decimalPlace, "SCSS calculated from Smythe2017 not equal to test value")
 
     def test_O2021(self):

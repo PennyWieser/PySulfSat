@@ -1548,8 +1548,8 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
     )
 
 
-    Smythe_calcs['SCSS_ideal_ppm_Smythe2017']=np.exp(Smythe_calcs['log_SCSS_ideal'])
-    Smythe_calcs['SCSS_ideal_ppm_Smythe2017_1sigma']=Smythe_calcs['SCSS_ideal_ppm_Smythe2017']*0.273169775211857
+    Smythe_calcs['SCSS2_ppm_ideal_ppm_Smythe2017']=np.exp(Smythe_calcs['log_SCSS_ideal'])
+    Smythe_calcs['SCSS2_ppm_ideal_ppm_Smythe2017_1sigma']=Smythe_calcs['SCSS2_ppm_ideal_ppm_Smythe2017']*0.273169775211857
     Smythe_calcs['T_Input_K']=T_K
     Smythe_calcs['P_Input_kbar']=P_kbar
     Smythe_calcs['Fe_FeNiCu_Sulf']=df_c['Fe_FeNiCu_Sulf_calc']
@@ -1577,18 +1577,18 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
     +Smythe_calcs['Na_XA_non_ideal']+Smythe_calcs['K_XA_non_ideal']+Smythe_calcs['H_XA_non_ideal']+Smythe_calcs['Si*Fe_non_ideal'])
     /T_K+np.log(df_c['Fe_FeNiCu_Sulf_calc'])-np.log(Smythe_calcs['Fe2_wt_atom'])-264.85*0.1*P_kbar/T_K+546.362*((df_c['Cu_FeNiCu_Sulf_calc']**2 +df_c['Cu_FeNiCu_Sulf_calc']*df_c['Ni_FeNiCu_Sulf_calc'])/T_K)
         )
-        Smythe_calcs['SCSS_non_ideal_ppm_Smythe2017']=np.exp(Smythe_calcs['log_SCSS_non_ideal'])
-        Smythe_calcs['SCSS_non_ideal_ppm_Smythe2017_1sigma']=Smythe_calcs['SCSS_non_ideal_ppm_Smythe2017']*0.267299081373473
+        Smythe_calcs['SCSS2_ppm_non_ideal_ppm_Smythe2017']=np.exp(Smythe_calcs['log_SCSS_non_ideal'])
+        Smythe_calcs['SCSS2_ppm_non_ideal_ppm_Smythe2017_1sigma']=Smythe_calcs['SCSS2_ppm_non_ideal_ppm_Smythe2017']*0.267299081373473
 
-        cols_to_move = ['SCSS_ideal_ppm_Smythe2017', 'SCSS_ideal_ppm_Smythe2017_1sigma',
-        'SCSS_non_ideal_ppm_Smythe2017', 'SCSS_non_ideal_ppm_Smythe2017_1sigma',
+        cols_to_move = ['SCSS2_ppm_ideal_ppm_Smythe2017', 'SCSS2_ppm_ideal_ppm_Smythe2017_1sigma',
+        'SCSS2_ppm_non_ideal_ppm_Smythe2017', 'SCSS2_ppm_non_ideal_ppm_Smythe2017_1sigma',
         'T_Input_K', "P_Input_kbar",'Fe_FeNiCu_Sulf', 'Fe3Fet_Liq_input']
 
     else:
         print('no non ideal SCSS as no Cu/CuFeNiCu')
 
 
-        cols_to_move = ['SCSS_ideal_ppm_Smythe2017', 'SCSS_ideal_ppm_Smythe2017_1sigma',
+        cols_to_move = ['SCSS2_ppm_ideal_ppm_Smythe2017', 'SCSS2_ppm_ideal_ppm_Smythe2017_1sigma',
         'T_Input_K', "P_Input_kbar",'Fe_FeNiCu_Sulf', 'Fe3Fet_Liq_input']
 
     Smythe_calcs = Smythe_calcs[cols_to_move +

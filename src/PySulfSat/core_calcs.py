@@ -918,7 +918,7 @@ def convert_fe_partition_to_fo2(*, liq_comps, T_K, P_kbar,  model="Kress1991", r
     fo2_calc=np.exp(ln_fo2_calc)
     # and back to log base 10
     log_fo2_calc=np.log10(fo2_calc)
-    DeltaQFM=log_fo2_calc-logfo2_QFM
+    deltaQFM=log_fo2_calc-logfo2_QFM
     DeltaNNO=log_fo2_calc-logfo2_NNO
 
 

@@ -169,7 +169,7 @@ def calculate_S_Tot_Jugo2010(*, SCSS2=None,  SCAS=None,deltaQFM):
 
 
 def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_Liq=None,
-                                T_K=None, Fe3Fet_Liq=None):
+                                T_K=None, Fe3Fet_Liq=None, df=None, logfo2=None):
     """
     Calculates the total amount of S accounting for the SCSS and SCAS
 
@@ -186,8 +186,11 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
         'Nash': Uses Nash et al. (2019) based on Fe3Fet_Liq and T_K
         'Jugo': Uses Jugo et al. (2010) Eq 10 based on DeltaQFM
         'Kleinsasser': Uses Kleinsasser et al. 2022 based on deltaQFM
+        'OM2022': Need to also enter your dataframe of liquid compositions.
 
     deltaQFM: int, float, panda.Series (for Jugo et al. 2010, or Kleinsasser et al. 2022)
+
+    logfo2: int, float, panda.Series (works for OM2022)
 
     Fe3Fet_Liq: int, float, panda.Series
         Proportion of Fe3Fet in the liquid, needed if model='Nash'
@@ -195,15 +198,42 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
     T_K: int, float, panda.Series
         Temperature in Kelvin, needed if model='Nash'
 
+    df: panda.DataFrame
+        Option, needed for OM2022
+
+
+
 
     """
+
     if model =="Kleinsasser":
         SCSS_Tot=calculate_S_Tot_Kleinsasser2022_dacite(SCSS2=SCSS,
                                                            deltaQFM=deltaQFM)
         SCAS_Tot=calculate_S_Tot_Kleinsasser2022_dacite(SCAS=SCAS,
                                                            deltaQFM=deltaQFM)
         S6St_Liq=np.nan
+
+
+
+
     else:
+
+        if model=='OM2022':
+            if T_K is None:
+                raise TypeError('You need to specify a temp')
+            if df is None:
+                raise TypeError('You need to input a liquid dataframe')
+            if Fe3Fet_Liq is None and logfo2 is None:
+                raise TypeError('you need to input either Fe3Fet_Liq or logfo2')
+            if Fe3Fet_Liq is not None:
+                calcS_OM2022_GivenFe3=calculate_OM2022_S6St(df=df, T_K=T_K,
+                            Fe3Fet_Liq=Fe3Fet_Liq)
+            if logfo2 is not None:
+                calcS_OM2022_GivenFe3=calculate_OM2022_S6St(df=df,
+                        T_K=T_K,
+                        logfo2=logfo2)
+            S6St_Liq=calcS_OM2022_GivenFe3['S6St_Liq']
+
         if model =="Jugo":
             S6St_Liq=calculate_S6St_Jugo2010_eq10(deltaQFM=deltaQFM)
 
