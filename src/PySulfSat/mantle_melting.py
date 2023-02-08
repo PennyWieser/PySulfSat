@@ -81,7 +81,7 @@ def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
 
 
     # Loop for Cu
-    for i in range(0, len(M)-1):
+    for i in range(0, len(M)):
 
         # If length of KDs>1, need to extract right one for each loop
         #print(KDs)
