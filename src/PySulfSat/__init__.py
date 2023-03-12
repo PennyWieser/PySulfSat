@@ -21,6 +21,7 @@ from PySulfSat.scas_calc import *
 from PySulfSat.sulf_mass_balance import *
 from PySulfSat.cali_plots import *
 from PySulfSat.mantle_melting import *
+from PySulfSat.monte_carlo_s_in_sulf_recon import *
 
 
 # version

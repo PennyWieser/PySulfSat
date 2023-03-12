@@ -168,7 +168,7 @@ def calculate_S_Tot_Jugo2010(*, SCSS2=None,  SCAS=None,deltaQFM):
         return SCAS_Tot
 
 
-def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_Liq=None,
+def calculate_S_Total_S_ppmCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_Liq=None,
                                 T_K=None, Fe3Fet_Liq=None, df=None, logfo2=None):
     """
     Calculates the total amount of S accounting for the SCSS and SCAS
@@ -259,8 +259,8 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
     if isinstance(SCSS_Tot, float):
         df_Species=pd.DataFrame(data={'deltaQFM': deltaQFM,
                                     'S6St_Liq': S6St_Liq,
-                                    'SCSS_2': SCSS,
-                                'SCAS_6': SCAS,
+                                    'SCSS_2_ppm': SCSS,
+                                'SCAS_6_ppm': SCAS,
                                 'SCSS_Tot': SCSS_Tot,
                                 'SCAS_Tot': SCAS_Tot,
                                     'S6 in SCSS_Tot': SCSS_S6_cont,
@@ -270,8 +270,8 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
 
         df_Species=pd.DataFrame(data={'deltaQFM': deltaQFM,
                                     'S6St_Liq': S6St_Liq,
-                                    'SCSS_2': SCSS,
-                                'SCAS_6': SCAS,
+                                    'SCSS_2_ppm': SCSS,
+                                'SCAS_6_ppm': SCAS,
                                 'SCSS_Tot': SCSS_Tot,
                                 'SCAS_Tot': SCAS_Tot,
                                     'S6 in SCSS_Tot': SCSS_S6_cont,
@@ -281,26 +281,26 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
     # Cant have more S6 than the SCAS
 
 
-    toomuchS6=df_Species['S6 in SCSS_Tot']>df_Species['SCAS_6']
+    toomuchS6=df_Species['S6 in SCSS_Tot']>df_Species['SCAS_6_ppm']
     df_Species['SCSS_Tot_check']=df_Species['SCSS_Tot']
-    df_Species.loc[toomuchS6, 'SCSS_Tot_check']=df_Species['SCAS_6']+df_Species['SCSS_2']
+    df_Species.loc[toomuchS6, 'SCSS_Tot_check']=df_Species['SCAS_6_ppm']+df_Species['SCSS_2_ppm']
 
     # Cant have more S2- than the SCSS
-    toomuchS2=df_Species['S2 in SCAS_Tot']>df_Species['SCSS_2']
+    toomuchS2=df_Species['S2 in SCAS_Tot']>df_Species['SCSS_2_ppm']
     df_Species['SCAS_Tot_check']=df_Species['SCAS_Tot']
     # Ignore this error for now, seems a panda issue. wasted a lot of time on it.
 
-    df_Species['SCAS_6'] = pd.to_numeric(df_Species['SCAS_6'], errors='coerce')
-    df_Species['SCSS_2'] = pd.to_numeric(df_Species['SCSS_2'], errors='coerce')
-    df_Species.loc[toomuchS2, 'SCAS_Tot_check']=df_Species['SCAS_6']+df_Species['SCSS_2']
+    df_Species['SCAS_6_ppm'] = pd.to_numeric(df_Species['SCAS_6_ppm'], errors='coerce')
+    df_Species['SCSS_2_ppm'] = pd.to_numeric(df_Species['SCSS_2_ppm'], errors='coerce')
+    df_Species.loc[toomuchS2, 'SCAS_Tot_check']=df_Species['SCAS_6_ppm']+df_Species['SCSS_2_ppm']
 
     #Set as the minimum one
-    df_Species.insert(0, 'Total_S',df_Species['SCAS_Tot_check'])
+    df_Species.insert(0, 'Total_S_ppm',df_Species['SCAS_Tot_check'])
     SCAS_higher=df_Species['SCAS_Tot_check']>df_Species['SCSS_Tot_check']
-    df_Species.loc[SCAS_higher, 'Total_S']=df_Species['SCSS_Tot_check']
+    df_Species.loc[SCAS_higher, 'Total_S_ppm']=df_Species['SCSS_Tot_check']
 
-    df_Species.insert(1, 'S2_Tot', df_Species['Total_S']*(1-df_Species['S6St_Liq']))
-    df_Species.insert(2, 'S6_Tot', df_Species['Total_S']*(df_Species['S6St_Liq']))
+    df_Species.insert(1, 'S2_Tot_ppm', df_Species['Total_S_ppm']*(1-df_Species['S6St_Liq']))
+    df_Species.insert(2, 'S6_Tot_ppm', df_Species['Total_S_ppm']*(df_Species['S6St_Liq']))
 
     df_Species2=df_Species.copy()
     df_Species2.drop(['SCAS_Tot_check', 'SCSS_Tot_check', 'SCSS_Tot_check'], axis=1, inplace=True)
@@ -353,6 +353,17 @@ def calculate_OM2022_CS6(df, T_K, Fe3Fet_Liq=None, logfo2=None):
     T_K: int, float, pd.series
         Temperature in Kelvin
 
+    Fe3Fet_Liq: float, pd.series
+        Fe3/Fet ratio in the liquid
+
+    logfo2: float, pd.series
+        logfo2 value
+
+
+    Returns
+    -----------
+    pd.DataFrame
+        input dataframe, with Cs6 calculated both Oneill and Bouilling way.
 
 
     """
@@ -564,4 +575,54 @@ def calculate_BW2022_OM2022_S6St(df, T_K, logfo2=None,
     liqs = liqs[cols_to_move +
                                     [col for col in liqs.columns if col not in cols_to_move]]
     return liqs
+
+
+def calculate_fo2_QFM_buffers(logfo2=-8.52, T_K=1200, P_kbar=1):
+    """ Calculates fo2 values for Frost, Oneill and Petrolog3 'QFM' buffer positions'
+    """
+    logfo2_QFM_Oneill=8.58-25050/T_K
+    # Frost depends on temperature
+
+    logfo2_QFM_highT=(-25096.3/T_K) + 8.735 + 0.11 * ((P_kbar*1000)-1)/T_K
+    T_Choice='HighT Beta Qtz'
+
+    logfo2_QFM_lowT=(-26455.3/T_K) +10.344 + 0.092 * ((P_kbar*1000)-1)/T_K
+    T_Choice='Low T alpha Qtz'
+
+    Cut_off_T=573+273.15+0.025*(P_kbar*1000)
+    if T_K<Cut_off_T:
+        logfo2_QFM_Frost= logfo2_QFM_lowT
+    if T_K>=Cut_off_T:
+        logfo2_QFM_Frost=logfo2_QFM_highT
+
+
+    logfo2_QFM_Petrolog=-24442/T_K+8.29
+
+    DeltaQFM_Oneill=logfo2-logfo2_QFM_Oneill
+    DeltaQFM_Frost=logfo2-logfo2_QFM_Frost
+    DeltaQFM_Petrolog=logfo2-logfo2_QFM_Petrolog
+
+
+    if isinstance(DeltaQFM_Oneill, float):
+
+        df=pd.DataFrame(data={'logfo2_QFM_ONeill': logfo2_QFM_Oneill,
+    'logfo2_QFM_Frost': logfo2_QFM_Frost,
+    'logfo2_QFM_Petrolog3': logfo2_QFM_Petrolog,
+'DeltaQFM_ONeill': DeltaQFM_Oneill,
+    'DeltaQFM_Frost': DeltaQFM_Frost,
+    'DeltaQFM_Petrolog3': DeltaQFM_Petrolog},
+    index=[0])
+    else:
+        df=pd.DataFrame(data={'logfo2_QFM_ONeill': logfo2_QFM_Oneill,
+    'logfo2_QFM_Frost': logfo2_QFM_Frost,
+    'logfo2_QFM_Petrolog3': logfo2_QFM_Petrolog,
+'DeltaQFM_ONeill': DeltaQFM_Oneill,
+    'DeltaQFM_Frost': DeltaQFM_Frost,
+    'DeltaQFM_Petrolog3': DeltaQFM_Petrolog
+    })
+
+    return df
+
+
+
 
