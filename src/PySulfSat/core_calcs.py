@@ -189,6 +189,7 @@ def calculate_anhydrous_cat_fractions_liquid(liq_comps):
                               for col in cat_frac_anhyd.columns]
     cat_frac_anhyd = pd.concat([liq_comps, mol_prop, cat_frac_anhyd], axis=1)
 
+
     if "Fe3Fet_Liq" in cat_frac_anhyd:
         cat_frac_anhyd['Mg_Number_Liq_NoFe3'] = (cat_frac_anhyd['MgO_Liq'] / 40.3044) / (
             (cat_frac_anhyd['MgO_Liq'] / 40.3044) + (cat_frac_anhyd['FeOt_Liq'] / 71.844))
