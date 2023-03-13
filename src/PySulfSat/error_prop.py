@@ -111,11 +111,11 @@ def duplicate_dataframe(df, N_dup=1000):
 
     return Dupdf
 
-def add_noise_2_dataframes(df_values, df_noise,
+def add_noise_2_dataframes(df_values, df_err,
         error_type="Abs", error_dist="normal", N_dups=10):
 
     df1=df_values.copy()
-    df2=df_noise.copy()
+    df2=df_err.copy()
 
     #def create_noise_2df(df1, df2, error_type="Abs", error_dist="normal", N_dup=3):
 
@@ -127,10 +127,10 @@ def add_noise_2_dataframes(df_values, df_noise,
         print('columns match in 2 dataframes')
     else:
         # Find columns that are in df1 but not in df2
-        print("Columns in df_values but not in df_noise:", set(df1.columns) - set(df2.columns))
+        print("Columns in df_values but not in df_err:", set(df1.columns) - set(df2.columns))
         # Find columns that are in df2 but not in df1
-        print("Columns in df_noise but not in df_values:", set(df2.columns) - set(df1.columns))
-        raise TypeError('Columns in df_noise dont match those in df_values, cant do calculation Ammend inputs')
+        print("Columns in df_err but not in df_values:", set(df2.columns) - set(df1.columns))
+        raise TypeError('Columns in df_err dont match those in df_values, cant do calculation Ammend inputs')
 
     # get only columns which are not objects
     num_cols = df1.select_dtypes(exclude=['object']).columns.tolist()
