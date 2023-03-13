@@ -9,8 +9,10 @@ import warnings as w
 
 from PySulfSat.core_calcs import *
 
+
+
 def add_noise_1var(var, error_var,
-error_type="Abs", error_dist="normal", N_dup=1000, sample_i=0):
+error_type="Abs", error_dist="normal", N_dup=1000, sample_i=0, df_values=None):
 
     """ Takes 1 row of pd series or a float, returns 1000 duplicates following specified error position
     """
@@ -39,9 +41,12 @@ error_type="Abs", error_dist="normal", N_dup=1000, sample_i=0):
 
     var_with_noise=Noise_to_add_var+df_c['var'].iloc[sample_i]
 
+
+
     return var_with_noise
 
-def add_noise_series(var, error_var,  error_type="Abs", error_dist="normal", N_dup=1000, Sample_ID=None, no_noise=False):
+
+def add_noise_series(var, error_var,  error_type="Abs", error_dist="normal", N_dup=1000, Sample_ID=None, no_noise=False, df_values=None):
 
 
 
@@ -98,11 +103,19 @@ def add_noise_series(var, error_var,  error_type="Abs", error_dist="normal", N_d
 
     return All_outputs
 
+def duplicate_dataframe(df, N_dup=1000):
+    df_values=df
+    Dupdf = pd.DataFrame(np.repeat(df_values.values,
+    N_dup, axis=0))
+    Dupdf.columns = df_values.columns
+
+    return Dupdf
+
 def add_noise_2_dataframes(df_values, df_noise,
         error_type="Abs", error_dist="normal", N_dups=10):
 
-    df1=df_values
-    df2=df_noise
+    df1=df_values.copy()
+    df2=df_noise.copy()
 
     #def create_noise_2df(df1, df2, error_type="Abs", error_dist="normal", N_dup=3):
 
@@ -138,7 +151,10 @@ def add_noise_2_dataframes(df_values, df_noise,
     df_noisy
 
     # Get sample names
-    s=df1['Sample_ID']
+    if 'Sample_ID' in df1.columns:
+        s=df1['Sample_ID']
+    else:
+        s=df1.index
     s_repeated = pd.Series(np.repeat(s.values, N_dups))
 
     # Tile the repeated values to get the end-on-end repetition

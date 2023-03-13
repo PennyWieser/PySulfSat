@@ -23,6 +23,8 @@ Welcome to PySulfSat's documentation!
 
    youtube
 
+    %
+
 .. toctree::
    :maxdepth: 2
    :caption: Data Input Options
@@ -74,6 +76,7 @@ Welcome to PySulfSat's documentation!
 
    Examples/S6_S2_Corrections/S6_S2_Corrections_Nash_Jugo_Kleinsasser
    Examples/S6_S2_Corrections/CS6_S6ST_Correction
+   Examples/S6St_Testing/CalcS6ST_Muth
 
    %
 

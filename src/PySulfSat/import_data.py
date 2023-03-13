@@ -124,3 +124,64 @@ def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, sample_l
     return out
 
 
+
+df_ideal_liq_noise = pd.DataFrame(columns=['SiO2_Liq_Err', 'TiO2_Liq_Err', 'Al2O3_Liq_Err',
+'FeOt_Liq_Err', 'MnO_Liq_Err', 'MgO_Liq_Err', 'CaO_Liq_Err', 'Na2O_Liq_Err', 'K2O_Liq_Err',
+'P2O5_Liq_Err', 'H2O_Liq_Err', 'Fe3Fet_Liq_Err', 'Ni_Liq_ppm_Err', 'Cu_Liq_ppm_Err'])
+
+def import_data_noise(filename, sheet_name=None, sample_label=None):
+
+    if 'csv' in filename:
+        my_input = pd.read_csv(filename)
+
+
+
+
+    if 'xls' in filename:
+        if sheet_name is not None:
+            my_input = pd.read_excel(filename, sheet_name=sheet_name)
+            #my_input[my_input < 0] = 0
+        else:
+            my_input = pd.read_excel(filename)
+            #my_input[my_input < 0] = 0
+
+
+
+    my_input_c = my_input.copy()
+
+    if "Sample_ID_Liq" not in my_input_c:
+        my_input_c['Sample_ID_Liq'] = my_input.index
+
+
+
+    if any(my_input.columns.str.contains("FeO_")) and (all(my_input.columns.str.contains("FeOt_")==False)):
+        raise ValueError("No FeOt found. You've got a column heading with FeO. To avoid errors based on common EPMA outputs"
+    " thermobar only recognises columns with FeOt for all phases except liquid"
+    " where you can also enter a Fe3Fet_Liq heading used for equilibrium tests")
+
+    if any(my_input.columns.str.contains("Fe2O3_")) and (all(my_input.columns.str.contains("FeOt_")==False)):
+        raise ValueError("No FeOt column found. You've got a column heading with Fe2O3. To avoid errors based on common EPMA outputs"
+        " thermobar only recognises columns with FeOt for all phases except liquid"
+        " where you can also enter a Fe3Fet_Liq heading used for equilibrium tests")
+
+    if any(my_input.columns.str.contains("FeOT_")) and (all(my_input.columns.str.contains("FeOt_")==False)):
+        raise ValueError("No FeOt column found. You've got a column heading with FeOT. Change to a lower case t")
+
+
+
+    myLiquids1 = my_input_c.reindex(df_ideal_liq_noise.columns, axis=1).fillna(0)
+    myLiquids1 = myLiquids1.apply(pd.to_numeric, errors='coerce').fillna(0)
+    myLiquids1[myLiquids1 < 0] = 0
+    print('We have replaced all missing liquid oxides and strings with zeros. ')
+
+    cols2=myLiquids1.columns
+    #my_input_c=my_input.copy()
+    for col in cols2:
+        if col in my_input_c.columns:
+            my_input_c=my_input_c.drop(columns=col)
+
+    out=pd.concat([myLiquids1, my_input_c], axis=1)
+    return out
+
+
+
