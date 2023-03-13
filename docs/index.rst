@@ -90,13 +90,7 @@ Welcome to PySulfSat's documentation!
 
 
 
- .. toctree::
-   :maxdepth: 2
-   :caption: Benchmarking
 
-   Benchmarking/Boulling_Wood_2022/BW_2022
-
-   %
 
 
 .. toctree::
