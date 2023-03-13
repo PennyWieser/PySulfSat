@@ -23,7 +23,7 @@ Welcome to PySulfSat's documentation!
 
    youtube
 
-    %
+   %
 
 .. toctree::
    :maxdepth: 2
