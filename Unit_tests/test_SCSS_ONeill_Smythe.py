@@ -51,17 +51,17 @@ decimalPlace, "Residual S doesnt match test value")
 
 class test_SCSS_SCAS_Total(unittest.TestCase):
     def test_SCSS_SCAS_Jugo(self):
-        self.assertAlmostEqual(ss.calculate_S_Total_S_ppmCSS_SCAS(deltaQFM=0.3,
+        self.assertAlmostEqual(ss.calculate_S_Total_SCSS_SCAS(deltaQFM=0.3,
             SCSS=1000, SCAS=5000, model='Jugo')['Total_S_ppm'][0], 1031.6227766016839,
 decimalPlace, "ST from Jugo doesnt match test value")
 
     def test_SCSS_SCAS_Nash(self):
-        self.assertAlmostEqual(ss.calculate_S_Total_S_ppmCSS_SCAS(Fe3Fet_Liq=Liq_test['Fe3Fet_Liq'], T_K=Liq_test['T_K'],
+        self.assertAlmostEqual(ss.calculate_S_Total_SCSS_SCAS(Fe3Fet_Liq=Liq_test['Fe3Fet_Liq'], T_K=Liq_test['T_K'],
             SCSS=1000, SCAS=5000, model='Nash')['Total_S_ppm'][0], 1006.9936479729372,
 decimalPlace, "ST from Nash doesnt match test value")
 
     def test_SCSS_SCAS_Nash_higher(self):
-        self.assertAlmostEqual(ss.calculate_S_Total_S_ppmCSS_SCAS(Fe3Fet_Liq=Liq_test['Fe3Fet_Liq']*5, T_K=Liq_test['T_K'],
+        self.assertAlmostEqual(ss.calculate_S_Total_SCSS_SCAS(Fe3Fet_Liq=Liq_test['Fe3Fet_Liq']*5, T_K=Liq_test['T_K'],
             SCSS=1000, SCAS=5000, model='Nash')['Total_S_ppm'][0], 5000.02347426457,
 decimalPlace, "ST from Nash doesnt match test value")
 

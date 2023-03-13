@@ -170,7 +170,7 @@ def calculate_S_Tot_Jugo2010(*, SCSS2=None,  SCAS=None,deltaQFM):
         return SCAS_Tot
 
 
-def calculate_S_Total_S_ppmCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_Liq=None,
+def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_Liq=None,
                                 T_K=None, Fe3Fet_Liq=None, df=None, logfo2=None):
     """
     Calculates the total amount of S accounting for the SCSS and SCAS

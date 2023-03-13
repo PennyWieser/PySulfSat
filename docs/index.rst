@@ -29,7 +29,7 @@ Welcome to PySulfSat's documentation!
    :maxdepth: 2
    :caption: Data Input Options
 
-   Examples/Data_Input/Importing_MeltsTBL
+   
    Examples/Data_Input/Importing_Petrolog
    Examples/Data_Input/Importing_Spreadsheet
    Benchmarking/Boulling_Wood_2022/BW_2022
