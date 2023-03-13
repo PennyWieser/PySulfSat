@@ -74,6 +74,11 @@ Welcome to PySulfSat's documentation!
 
    Examples/S6_S2_Corrections/S6_S2_Corrections_Nash_Jugo_Kleinsasser
    Examples/S6_S2_Corrections/CS6_S6ST_Correction
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Monte Carlo Simulations
+   Examples/Monte_Carlo_Simulations/Propagating_error
    Examples/S6St_Testing/CalcS6ST_Muth
 
    

@@ -14,7 +14,30 @@ from PySulfSat.core_calcs import *
 def add_noise_1var(var, error_var,
 error_type="Abs", error_dist="normal", N_dup=1000, sample_i=0, df_values=None):
 
-    """ Takes 1 row of pd series or a float, returns 1000 duplicates following specified error position
+    """ Takes 1 row of pd series or a float, returns N_dup duplicates following specified error position
+
+    Parameters
+    ---------------
+    var: pd.Series or float
+        value to add noise to (e..g, could be 5). If a panda series, sample_i specifies which row it uses
+
+    error_var: int, float
+        error to add (e.g. enter 5 to add 1sigma=5 Kelvin error to temperature)
+
+    N_dup: int
+        Number of duplicates to make (e.g., 1000 synthetic values)
+
+    error_type: str, 'Abs' or 'Perc'
+        Whether the inputted errors are absolute errors, or percentage errors
+
+
+    err_dist: str, "normal" (default) or "uniform"
+        whether the added error is normally or uniformly distributed
+
+    Returns
+    ----------
+    panda series with len N_dup
+
     """
     sample_i=0
     if isinstance(var, pd.Series):
@@ -45,8 +68,65 @@ error_type="Abs", error_dist="normal", N_dup=1000, sample_i=0, df_values=None):
 
     return var_with_noise
 
+def av_noise_samples_series(calc, sampleID):
+    '''
+    This function calculates the mean, median, standard devation, maximum and
+    minimum value of rows specified by "calc" based on values in "Sample ID" where both inputs are panda series.
+
+    Parameters
+    -------
+    calc: Series
+        Panda series of inputs you want to average.
+    SampleID: str
+        column heading for the thing you want to average by (e.g., Sample_ID_Cpx)
+
+    Returns
+    -------
+
+    Dataframe with headings "Sample", "Mean_calc", "Median_calc",
+    "St_dev_calc", "Max_calc", "Min_calc"
+
+    '''
+
+
+    if isinstance(calc, pd.Series):
+        N = sampleID.unique()
+        Av_mean = np.empty(len(N), dtype=float)
+        Av_median = np.empty(len(N), dtype=float)
+        Max = np.empty(len(N), dtype=float)
+        Min = np.empty(len(N), dtype=float)
+        Std = np.empty(len(N), dtype=float)
+        i=0
+        for ID in sampleID.unique():
+            sam=ID
+            # print(sam)
+            # print(i)
+            # print(np.nanmean(calc[sampleID == sam]))
+
+
+
+            Av_mean[i] = np.nanmean(calc[sampleID == sam])
+            Av_median[i] = np.nanmedian(calc[sampleID == sam])
+            Std[i] = np.nanstd(calc[sampleID == sam])
+            Min[i] = np.nanmin(calc[sampleID == sam])
+            Max[i] = np.nanmax(calc[sampleID == sam])
+
+            i=i+1
+    len1=len(calc[sampleID == sam])
+    Err_out = pd.DataFrame(data={'Sample': N, '# averaged': len1, 'Mean_calc': Av_mean,
+    'Median_calc': Av_median, 'St_dev_calc': Std,
+    'Max_calc': Max, 'Min_calc': Min})
+
+    return Err_out
+
+
 
 def add_noise_series(var, error_var,  error_type="Abs", error_dist="normal", N_dup=1000, Sample_ID=None, no_noise=False, df_values=None):
+
+    """  This function takes a panda series 'var' and adds noise from 'error_var', with attributions
+    depending on the following parameters. It returns a panda series having duplicated each input row N_dup times, with noise added.
+
+    """
 
 
 
@@ -104,6 +184,19 @@ def add_noise_series(var, error_var,  error_type="Abs", error_dist="normal", N_d
     return All_outputs
 
 def duplicate_dataframe(df, N_dup=1000):
+    """ This function takes a dataframe, and for each row, makes N_dup duplicates, end on end
+    (e.g. row1-row2-row3 goes to row1-row1-row1-rowN_dup, row2-row2-row2-rowN_dup)
+
+    parameters
+    --------------
+    df: pd.DataFrame
+        dataframe that needs duplicating. Can have whatever rows and columns you want
+
+    N_dup: int
+        Number of times to duplicate the row.
+
+    """
+
     df_values=df
     Dupdf = pd.DataFrame(np.repeat(df_values.values,
     N_dup, axis=0))
@@ -113,6 +206,9 @@ def duplicate_dataframe(df, N_dup=1000):
 
 def add_noise_2_dataframes(df_values, df_err,
         error_type="Abs", error_dist="normal", N_dups=10):
+    """ This function takes
+
+    """
 
     df1=df_values.copy()
     df2=df_err.copy()
