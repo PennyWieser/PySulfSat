@@ -78,21 +78,9 @@ Welcome to PySulfSat's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Monte Carlo Simulations
+
    Examples/Monte_Carlo_Simulations/Propagating_error
    Examples/S6St_Testing/CalcS6ST_Muth
-
-   
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Mantle Melting2
-
-   Examples/Mantle_Melting_Lee_Wieser/Simple_Melting_Cu_S_Ba
-
-   
-
-
-
 
 
 
