@@ -205,13 +205,29 @@ def duplicate_dataframe(df, N_dup=1000):
     return Dupdf
 
 def add_noise_2_dataframes(df_values, df_err,
-        error_type="Abs", error_dist="normal", N_dups=10):
+        error_type="Abs", error_dist="normal", N_dups=10, sample_name_col='Sample_ID_Liq'):
     """ This function takes
 
     """
 
     df1=df_values.copy()
     df2=df_err.copy()
+
+    # Dealing with sample names
+
+    if sample_name_col in df1.columns:
+        s=df1[sample_name_col]
+        df1=df1.drop(sample_name_col, axis=1)
+
+    else:
+        s=df1.index
+
+    if sample_name_col in df2.columns:
+        df2=df2.drop(sample_name_col)
+
+
+    s_repeated = pd.Series(np.repeat(s.values, N_dups))
+
 
     #def create_noise_2df(df1, df2, error_type="Abs", error_dist="normal", N_dup=3):
 
@@ -247,17 +263,13 @@ def add_noise_2_dataframes(df_values, df_err,
     df_noisy
 
     # Get sample names
-    if 'Sample_ID' in df1.columns:
-        s=df1['Sample_ID']
-    else:
-        s=df1.index
-    s_repeated = pd.Series(np.repeat(s.values, N_dups))
+
 
     # Tile the repeated values to get the end-on-end repetition
     s_end_on_end = pd.Series(np.tile(s_repeated, N_dups))
 
 
-    df_noisy['Sample_ID']=s_end_on_end
+    df_noisy[sample_name_col]=s_end_on_end
 
 
 

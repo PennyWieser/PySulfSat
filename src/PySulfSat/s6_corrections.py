@@ -36,7 +36,7 @@ def calculate_SCSS_Total(SCSS, S6St_Liq):
     return SCSS_Total
 
 
-def calculate_SCAS_Total(SCAS, S2St_Liq):
+def calculate_SCAS_Total(SCAS, S2St_Liq=None, S6St_Liq=None):
     '''
     Calculates SCAS Total from the SCAS (6+)
     See Wieser et al. (2019) for details
@@ -49,12 +49,17 @@ def calculate_SCAS_Total(SCAS, S2St_Liq):
     S2St_Liq: int, float, pandas.Series
         Proportion of S2- in the liquid
 
+    or
+    S6St_Liq: proportion of S6+ in the liquid
+
     Returns
     -----------
     float, pandas.Series
         SCAStotal, i.e inputted SCAS (6+) scaled up to account for S present in the S2- form.
 
     '''
+    if S6St_Liq is not None:
+        S2St_Liq=1-S6St_Liq
     SCAS_Total=SCAS/(1-S2St_Liq)
     return SCAS_Total
 
@@ -580,7 +585,7 @@ def calculate_BW2022_OM2022_S6St(df, T_K, logfo2=None,
 
 
 def calculate_fo2_QFM_buffers(logfo2=-8.52, T_K=1200, P_kbar=1):
-    """ Calculates fo2 values for Frost, Oneill and Petrolog3 'QFM' buffer positions'
+    """ Calculates fo2 values for Frost, Oneill, MELTS and Petrolog3/Myers 'QFM' buffer positions'
     """
     logfo2_QFM_Oneill=8.58-25050/T_K
     # Frost depends on temperature
@@ -598,11 +603,14 @@ def calculate_fo2_QFM_buffers(logfo2=-8.52, T_K=1200, P_kbar=1):
         logfo2_QFM_Frost=logfo2_QFM_highT
 
 
-    logfo2_QFM_Petrolog=-24442/T_K+8.29
+    logfo2_QFM_Petrolog=-24442/T_K+8.29 #This is actually Myers 1983
+    logfo2_QFM_MeltsExcel=-24442/T_K + 8.29 + 0.111*(P_kbar*1000-1)/T_K
 
     DeltaQFM_Oneill=logfo2-logfo2_QFM_Oneill
     DeltaQFM_Frost=logfo2-logfo2_QFM_Frost
     DeltaQFM_Petrolog=logfo2-logfo2_QFM_Petrolog
+    DeltaQFM_MeltsExcel=logfo2-logfo2_QFM_MeltsExcel
+
 
 
     if isinstance(DeltaQFM_Oneill, float):
@@ -612,7 +620,9 @@ def calculate_fo2_QFM_buffers(logfo2=-8.52, T_K=1200, P_kbar=1):
     'logfo2_QFM_Petrolog3': logfo2_QFM_Petrolog,
 'DeltaQFM_ONeill': DeltaQFM_Oneill,
     'DeltaQFM_Frost': DeltaQFM_Frost,
-    'DeltaQFM_Petrolog3': DeltaQFM_Petrolog},
+    'DeltaQFM_Petrolog3': DeltaQFM_Petrolog,
+    'DeltaQFM_MeltsExcel': DeltaQFM_MeltsExcel,
+    },
     index=[0])
     else:
         df=pd.DataFrame(data={'logfo2_QFM_ONeill': logfo2_QFM_Oneill,
@@ -620,7 +630,8 @@ def calculate_fo2_QFM_buffers(logfo2=-8.52, T_K=1200, P_kbar=1):
     'logfo2_QFM_Petrolog3': logfo2_QFM_Petrolog,
 'DeltaQFM_ONeill': DeltaQFM_Oneill,
     'DeltaQFM_Frost': DeltaQFM_Frost,
-    'DeltaQFM_Petrolog3': DeltaQFM_Petrolog
+    'DeltaQFM_Petrolog3': DeltaQFM_Petrolog,
+    'DeltaQFM_MeltsExcel': DeltaQFM_MeltsExcel,
     })
 
     return df

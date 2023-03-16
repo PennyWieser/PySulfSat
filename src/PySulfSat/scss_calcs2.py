@@ -1435,7 +1435,7 @@ def calculate_sulf_NiFeNiCu(Ni_Sulf, Cu_Sulf, Fe_Sulf):
 ## Smythe Parameterization
 
 def calculate_S2017_SCSS(*, df, T_K, P_kbar, Fe3Fet_Liq=None, Fe_FeNiCu_Sulf=None, Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None,
-Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=None, Ni_Liq=None, Cu_Liq=None,
+Fe_Sulf=None, Ni_Sulf=None, Cu_Sulf=None, Ni_Liq=None, Cu_Liq=None, H2O_Liq=None,
 Ni_Sulf_init=5, Cu_Sulf_init=5):
     '''
     Calculates SCSS using the model of Smythe et al. (2017).
@@ -1459,6 +1459,9 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
     Fe3Fet_Liq: int, float, pandas.Series
         Proportion of Fe3+ in the liquid.
         Various parts of the calculation use only Fe2.
+
+    H2O_Liq: int, float, panda.Series
+        Overwrites H2O_Liq in the input dataframe.
 
     Sulfide Composition: Options to calculate from the liquid composition, enter the comp in el wt%,
     or enter the FeFeNiCu, Cu
@@ -1502,6 +1505,8 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
     df_c=df.copy()
     if Fe3Fet_Liq is not None:
         df_c['Fe3Fet_Liq']=Fe3Fet_Liq
+    if H2O_Liq is not None:
+        df_c['H2O_Liq']=H2O_Liq
     # First, calculate silicate hydrous mole fractions, as true regardless of choice of sulfide composition
     Smythe_calcs=calculate_Smythe_silicate_mole_fractions(df_c, Fe3Fet_Liq)
 
@@ -1510,6 +1515,8 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
     Fe_Sulf=Fe_Sulf, Ni_Sulf=Ni_Sulf, Cu_Sulf=Cu_Sulf, Fe_FeNiCu_Sulf=Fe_FeNiCu_Sulf,
     Cu_FeNiCu_Sulf=Cu_FeNiCu_Sulf, Ni_FeNiCu_Sulf=Ni_FeNiCu_Sulf,
     Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, df_c=df_c, T_K=T_K)
+
+    print(df_c.columns)
 
 
     # Calculating the different liquid components
@@ -1716,6 +1723,8 @@ Ni_Liq=None, Cu_Liq=None, df_c=None, Ni_Sulf_init=5, Cu_Sulf_init=5 ):
             df_c['Fe_Sulf_Calc']=Sulf_All['Fe_Sulf']
             df_c['O_Sulf_Calc']=Sulf_All['O_Sulf']
             df_c['S_Sulf_Calc']=Sulf_All['S_Sulf']
+            df_c['DCu']=Sulf_All['DCu']
+            df_c['DNi']=Sulf_All['DNi']
 
         if Fe_FeNiCu_Sulf=="Calc_ONeill":
             Fe_FeNiCu_Sulf_calc=calculate_ONeill_sulf(FeOt_Liq=df_c['FeOt_Liq'],
