@@ -8,6 +8,17 @@ st_ratio=1/22.6436 # From https://doi.org/10.1016/S0016-7037(01)00611-1
 
 def convert_d34_to_3432S(d34S, st_ratio=1/22.6436):
     """ Converts d34S to 3432S using a st ratio (34/32S value)
+
+    Parameters
+    --------------
+    d34S: int, float, pd.Series, np.array
+        d34S
+
+    st_ratio: S isotope ratio of standard to reference too
+
+    Returns
+    -------------
+    34/32S ratio.
     """
     S3432=((d34S/1000)+1)*(st_ratio)
     return S3432

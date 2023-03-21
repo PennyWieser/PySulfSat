@@ -16,6 +16,9 @@ df_ideal_liq_Chow = pd.DataFrame(columns=['SiO2_Liq', 'TiO2_Liq', 'Al2O3_Liq',
 'FeOt_Liq', 'MnO_Liq', 'MgO_Liq', 'CaO_Liq', 'Na2O_Liq', 'K2O_Liq', 'H2O_Liq'])
 
 def norm_liqs_with_H2O(Liqs):
+    """ Normalizes liquids so hydrous sum is 100 (enter df of Liqs, returns normalized df)
+
+    """
     Liqs_c=Liqs.copy()
     Liqs_c=Liqs_c.fillna(0)
     Liqs2=Liqs_c.reindex(
@@ -39,6 +42,8 @@ def calculate_CD2019_SCAS(*, df, T_K, H2O_Liq=None, Fe3Fet_Liq=None, P_kbar=None
 
     T_K: int, float, pandas.Series
         Temperature in Kelvin.
+
+    Optional:
 
     H2O_Liq: int, float, pandas.Series
         Option input, overwrites H2O_Liq in input dataframe
@@ -110,6 +115,8 @@ def calculate_ZT2022_SCAS(*, df, T_K, H2O_Liq=None, Fe3Fet_Liq=None, P_kbar=None
     T_K: int, float, pandas.Series
         Temperature in Kelvin.
 
+    Optional
+
     H2O_Liq: int, float, pandas.Series
         Option input, overwrites H2O_Liq in input dataframe
 
@@ -180,6 +187,13 @@ def calculate_MK2015_SCAS(df, T_K, H2O_Liq=None, Fe3Fet_Liq=None, P_kbar=None):
 
     T_K: int, float, pandas.Series
         Temperature in Kelvin
+
+
+    Optional
+
+    H2O_Liq: int, float, pandas.Series
+        Option input, overwrites H2O_Liq in input dataframe
+
 
     Fe3Fet_Liq, P_kbar not required, here for consistency with other functions
 

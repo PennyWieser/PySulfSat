@@ -15,6 +15,8 @@ df_ideal_liq_lizhang = pd.DataFrame(columns=['SiO2_Liq', 'TiO2_Liq', 'Al2O3_Liq'
 'P2O5_Liq'])
 
 def norm_liqs_excl_H2O(Liqs):
+    """ Normalizes without H2O (anhydrous total = 100)
+    """
     Liqs_c=Liqs.copy()
     Liqs_c=Liqs_c.fillna(0)
     Liqs2=Liqs_c.reindex(
@@ -50,20 +52,33 @@ highT=False, lowT=False):
     P_kbar: int, float, pandas.Series
         Pressure in kbar
 
-    logfo2: int, float, or pandas.Series
-        logfo2, used to convert to Fe3 following the method of Li and Zhang (2022)
+
 
     T_K_transition : bool
         The model shows a flip at 1200C. If T_K_transition is False, this doesnt happen. This generates more coherent results.
+        You then also need to specify whether you want to use the highT or lowT optoin (highT=True)
+
+
+    Optional
+
+    H2O_Liq: int, float, pandas.Series
+        Option input, overwrites H2O_Liq in input dataframe
+
+
+    logfo2: int, float, or pandas.Series
+        logfo2, used to convert to Fe3 following the method of Li and Zhang (2022)
+
 
     Fe3Fet_Liq: int, float, pandas.Series, or "Calc_ONeill"
         Proportion of Fe3+ in the liquid, as various parts of the calculation use only Fe2.
         If "Calc_ONeill" Calculates as a function of MgO content, using the MORB relationship.
 
-    Sulfide Composition: Options to calculate from the liquid composition, enter the comp in el wt%,
+
+
+    Various options for Sulfide Composition: calculate from the liquid composition, enter the comp in el wt%,
     or enter the Fe_FeNiCu_Sulf, Cu
 
-      if you want to calculate sulfide composition:
+        Calculate sulfide composition:
 
             Fe_FeNiCu_Sulf = "Calc_Smythe", also needs Ni_Sulf_init, and Cu_Sulf_init
             Calculates sulfide composition analagous to the Solver function in the Smythe et al. (2017) spreadsheet.
@@ -510,6 +525,11 @@ def calculate_F2015_SCSS(df, T_K, P_kbar, H2O_Liq=None, Fe3Fet_Liq=None,Fe_FeNiC
     P_kbar: int, float, pandas.Series
         Pressure in kbar
 
+    Optional
+
+    H2O_Liq: int, float, pandas.Series
+        Option input, overwrites H2O_Liq in input dataframe
+
     Fe3Fet_Liq, Fe_FeNiCu_Sulf - Doesnt use these values. here for consistency with other functions
 
     Returns
@@ -563,6 +583,11 @@ Ni_Liq=None, Cu_Liq=None, Fe_Sulf=None, Cu_Sulf=None, Ni_Sulf=None, Ni_Sulf_init
 
     P_kbar: int, float, pandas.Series
         Pressure in kbar
+
+    Optional
+
+    H2O_Liq: int, float, pandas.Series
+        Option input, overwrites H2O_Liq in input dataframe
 
     Fe3Fet_Liq: int, float, pandas.Series, or "Calc_ONeill"
         Proportion of Fe3+ in the liquid, as various parts of the calculation use only Fe2.
@@ -1025,7 +1050,7 @@ def calculate_sulf_kds(Ni_Sulf, Cu_Sulf, FeOt_Liq,  T_K, Fe3Fet_Liq=None):
     Returns
     -----------
     pandas.DataFrame
-        Calculated Cu, Ni, O, S and Fe content of sulfide.
+        Calculated Cu, Ni, O, S and Fe content of sulfide, along with Ds from Kiseeva and Brenan
 
     '''
     if Fe3Fet_Liq is not None:
@@ -1562,21 +1587,7 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
     Smythe_calcs['Fe_FeNiCu_Sulf']=df_c['Fe_FeNiCu_Sulf_calc']
     Smythe_calcs['Fe3Fet_Liq_input']=Fe3Fet_Liq
 
-    # if (isinstance(Fe_FeNiCu_Sulf, float) or isinstance(Fe_FeNiCu_Sulf, int)) or (isinstance(Fe_FeNiCu_Sulf, pd.Series)) and (Cu_FeNiCu_Sulf is None and Ni_FeNiCu_Sulf is None):
-    #     non_ideal=False
-    #     print('no non ideal SCSS as no Cu/CuFeNiCu')
-    # elif not (isinstance(Fe_FeNiCu_Sulf, pd.Series)):
-    #     if Fe_FeNiCu_Sulf == 'Calc_ONeill':
-    #         non_ideal=False
-    #     if Fe_FeNiCu_Sulf == 'Calc_Smythe':
-    #         non_ideal=True
-    #
-    #
-    # elif (isinstance(Fe_FeNiCu_Sulf, pd.Series)) and (Cu_FeNiCu_Sulf is not None and Ni_FeNiCu_Sulf is not None):
-    #     non_ideal=True
-    #
-    #
-    # if
+
     if 'Ni_FeNiCu_Sulf_calc' in df_c.columns and 'Cu_FeNiCu_Sulf_calc' in df_c.columns:
         Smythe_calcs['log_SCSS_non_ideal']=(
         (122175-80.28*T_K+8.474*T_K*np.log(T_K))/(8.314*T_K)+9.352+(Smythe_calcs['Si_XA_non_ideal']+Smythe_calcs['Ti_XA_non_ideal']

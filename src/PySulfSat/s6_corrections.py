@@ -16,7 +16,7 @@ from PySulfSat.core_calcs import *
 def calculate_SCSS_Total(SCSS, S6St_Liq):
     '''
     Calculates SCSS Total from the SCSS (2-)
-    See Wieser et al. (2019) for details
+    following Jugo et al. (2009, 2010)
 
     Parameters
     -----------
@@ -39,14 +39,14 @@ def calculate_SCSS_Total(SCSS, S6St_Liq):
 def calculate_SCAS_Total(SCAS, S2St_Liq=None, S6St_Liq=None):
     '''
     Calculates SCAS Total from the SCAS (6+)
-    See Wieser et al. (2019) for details
+    following Jugo et al. (2009, 2010)
 
     Parameters
     -----------
-    SCAS: int, float, pandas.Series
+    SCAS: int, float, pandas.Series, np.array
         SCAS from different calculators (only uses S6+)
 
-    S2St_Liq: int, float, pandas.Series
+    S2St_Liq: int, float, pandas.Series, np.array
         Proportion of S2- in the liquid
 
     or
@@ -54,7 +54,7 @@ def calculate_SCAS_Total(SCAS, S2St_Liq=None, S6St_Liq=None):
 
     Returns
     -----------
-    float, pandas.Series
+    float, pandas.Series, np.array
         SCAStotal, i.e inputted SCAS (6+) scaled up to account for S present in the S2- form.
 
     '''
@@ -70,12 +70,12 @@ def calculate_S6St_Jugo2010_eq10(deltaQFM):
 
     Parameters
     -----------
-    deltaQFM: int, float, pandas.Series
-        Offset from the QFM buffer in log units.
+    deltaQFM: int, float, pandas.Series, np.array
+        Offset from the QFM buffer in log units. Make sure relative to frost buffer
 
     Returns
     -----------
-    float, pandas.Series
+    float, pandas.Series, np.array
         Proportion of S6+ in the liquid
 
     '''
@@ -90,12 +90,12 @@ def calculate_S2St_Jugo2009_eq8(deltaQFM):
 
     Parameters
     -----------
-    deltaQFM: int, float, pandas.Series
+    deltaQFM: int, float, pandas.Series, np.array
         Offset from the QFM buffer in log units.
 
     Returns
     -----------
-    float, pandas.Series
+    float, pandas.Series, np.array
         Proportion of S6+ in the liquid
 
     '''
@@ -111,14 +111,14 @@ def calculate_S6St_Nash2019(T_K, Fe3Fet_Liq):
 
     Parameters
     -----------
-    T_K: int, float, pandas.Series
+    T_K: int, float, pandas.Series, np.array
         Temperature in Kelvin.
 
-    Fe3Fet_Liq: int, float, pandas.Series
+    Fe3Fet_Liq: int, float, pandas.Series, np.array
         Proportion of Fe3 in the liquid
     Returns
     -----------
-    float, pandas.Series
+    float, pandas.Series,  np.array
         Proportion of S6+ in the liquid
 
     '''
@@ -141,7 +141,24 @@ def calculate_S6St_Nash2019(T_K, Fe3Fet_Liq):
 
 def calculate_S_Tot_Kleinsasser2022_dacite(*, SCSS2=None,  SCAS=None, deltaQFM=None):
     """ Calculates SCSS total as a function of S2- and S6+ in dacitic melts,
-    following Kleinsasser et al. 2022"""
+    following Kleinsasser et al. 2022
+
+    Parameters
+    -----------
+    SCSS2: int, float, pd.Series, np.array
+        SCSS in ppm
+
+    SCAS: int, float, pd.Series, np.array
+        SCAS in ppm
+
+    deltaQFM: int, float, pd.Series, np.array
+
+    Returns
+    --------
+    same format as inputs
+        Proportion of S6+ in the liquid
+
+    """
 
     if SCSS2 is not None:
         SCSS_Tot=SCSS2*(1+10**(2*deltaQFM-3.05))
@@ -327,6 +344,10 @@ def calculate_BW2022_CS6(*, df, T_K):
     T_K: int, float, pd.series
         Temperature in Kelvin
 
+    Returns
+    --------------
+    pd.DataFrame:
+        includes columns for CS6 in BW22 and O22 format, and cat fractions
 
 
     """
@@ -585,7 +606,24 @@ def calculate_BW2022_OM2022_S6St(df, T_K, logfo2=None,
 
 
 def calculate_fo2_QFM_buffers(logfo2=-8.52, T_K=1200, P_kbar=1):
-    """ Calculates fo2 values for Frost, Oneill, MELTS and Petrolog3/Myers 'QFM' buffer positions'
+    """ Calculates fo2 values for Frost, Oneill, MELTS and Petrolog3/Myers 'QFM' buffer positions, and
+    the offset from each QFM bufer
+
+    Parameters
+    ----------------
+    logfo2: float, int, pd.Series, np.array
+        logfo2 value
+
+    T_K: float, int, pd.Series, np.array
+        Temperature in Kelvin
+
+    P_kbar: float, int, pd.Series, np.array
+        Presure in kbar
+
+    Returns
+    -------------------
+    pd.DataFrame
+        logfo2 positions for each buffer, and the delta QFM values for each reference point.
     """
     logfo2_QFM_Oneill=8.58-25050/T_K
     # Frost depends on temperature

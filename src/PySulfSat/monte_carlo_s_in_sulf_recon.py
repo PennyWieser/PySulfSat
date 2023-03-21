@@ -9,8 +9,50 @@ sulf_dens=None, melt_dens=None,
 error_S_Sulf=0, error_type_S_Sulf='Abs', error_dist_S_Sulf='normal',
 error_Vol=0, error_type_Vol='Abs', error_dist_Vol='normal',
 error_sulf_dens=0, error_type_sulf_dens='Abs', error_dist_sulf_dens='normal',
-error_melt_dens=0, error_type_melt_dens='Abs', error_dist_melt_dens='normal',
-plot_figure=True, len_loop=1):
+error_melt_dens=0, error_type_melt_dens='Abs', error_dist_melt_dens='normal', len_loop=1):
+
+    """ This function propagates uncertainty in reconstruction of melt inclusion -sulfide volumes for a single row in a dataframe
+    and returns a dataframe
+
+    Parameters
+    ----------------
+    sample_i: int
+        if your inputs are panda series, says which row to take
+
+    N_dup: int
+        Number of duplicates when generating errors for Monte Carlo simulations
+
+    S_Sulf: int
+        S in sulifde in wt%
+
+    Vol: int, float, pd.series
+        Volume proportion of sulfide in melt inclusion
+
+    sulf_dens: int, float, pd.series
+        Density of the sulfide in kg/m3
+
+    melt_dens:int, float, pd.series
+        Density of the melt in kg/m3
+
+    error_Vol, error_sulf_dens, error_melt_dens: int, float, pd.Series
+        Error for each variable, can be absolute or %
+
+    error_type_Vol, error_type_sulf_dens, error_type_melt_dens: 'Abs' or 'Perc'
+        whether given error is perc or absolute
+
+    error_dist_Vol, error_dist_sulf_dens, error_dist_melt_dens: 'normal' or 'uniform'
+        Distribution of simulated error
+
+    Returns
+    ------------------
+    pd.DataFrame:
+        Input variable duplicated N_dup times with noise added.
+
+
+
+
+    """
+
 
     if len_loop==1:
         df_c=pd.DataFrame(data={'S_Sulf': S_Sulf,
@@ -124,9 +166,47 @@ sulf_dens=None, melt_dens=None,
 error_S_Sulf=0, error_type_S_Sulf='Abs', error_dist_S_Sulf='normal',
 error_Vol=0, error_type_Vol='Abs', error_dist_Vol='normal',
 error_sulf_dens=0, error_type_sulf_dens='Abs', error_dist_sulf_dens='normal',
-error_melt_dens=0, error_type_melt_dens='Abs', error_dist_melt_dens='normal',
-plot_figure=True, len_loop=1):
+error_melt_dens=0, error_type_melt_dens='Abs', error_dist_melt_dens='normal'):
 
+
+
+    """ This function propagates uncertainty in reconstruction of melt inclusion -sulfide volumes
+    by feeding each row into propagate_s_in_sulfide_ind
+
+    Parameters
+    ----------------
+
+    N_dup: int
+        Number of duplicates when generating errors for Monte Carlo simulations
+
+    S_Sulf: int
+        S in sulifde in wt%
+
+    Vol: int, float, pd.series
+        Volume proportion of sulfide in melt inclusion
+
+    sulf_dens: int, float, pd.series
+        Density of the sulfide in kg/m3
+
+    melt_dens:int, float, pd.series
+        Density of the melt in kg/m3
+
+    error_Vol, error_sulf_dens, error_melt_dens: int, float, pd.Series
+        Error for each variable, can be absolute or %
+
+    error_type_Vol, error_type_sulf_dens, error_type_melt_dens: 'Abs' or 'Perc'
+        whether given error is perc or absolute
+
+    error_dist_Vol, error_dist_sulf_dens, error_dist_melt_dens: 'normal' or 'uniform'
+        Distribution of simulated error
+
+    Returns
+    ------------------
+    pd.DataFrame: df_step, All_outputs
+        All outputs has calculations for every simulaiton
+        df_step has average and standard deviation for each sample
+
+    """
 
 
 

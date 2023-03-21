@@ -10,11 +10,9 @@ def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
                         S_Sulf=363636, elem_Per=30,
                         S_Mantle=200,
                         S_Melt_SCSS_2_ppm=980.7872088,
-                        Prop_S6=0,
-                        KdCuSulf=800,
-                        KdBaSulf=0,
-                        Trace1_per=6.85,
+                        Prop_S6=0
                         ):
+
     """ Function for calculating trajectory of S during mantle melting,
     adapted from the Excel workbook of Lee et al. (2012) and the Python code
     of Wieser et al. (2020)
@@ -32,9 +30,34 @@ def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
 
     F: np.array
         F you want
+
     Modes: Pandas.Dataframe
         Dataframe of ol-opx-cpx-sp modes, with column headings 'ol',
         'opx', 'cpx', 'sp'
+        (can be 1 row or multiple for each step of melting, in which case N is adjusted to be length of this dataframe)
+
+    KDs: pandas.DataFrame
+        Dataframe of KD values. Can be 1 row or multiple for each step of melting
+
+    S_Sulf: float, int
+        S content of mantle sulfides in ppm
+
+    S_Mantle: float, int
+        S content of mantle in ppm
+
+    elem_Per: float, int
+        Content of element of interest in mantle prior to melting (in ppm).
+
+    S_Melt_SCSS_2_ppm: float, int, pd.Series
+        S2- content of mantle in ppm
+
+    Prop_S6: float, int, pd.Series
+        Proportion of S6, increases S_Melt_SCSS if S6+ is present
+
+
+    Returns
+    -------------
+    pd.DataFrame: dataframe with melt extents, instantaneous and aggregate melts, and residual mantle source composition.
 
 
     """
@@ -84,11 +107,11 @@ def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
     DeltaXSulf=np.empty((len_S_Mantle, len(M)), dtype=float)
     DeltaXSil=np.empty((len_S_Mantle, len(M)), dtype=float)
     P=np.empty((len_S_Mantle, len(M)), dtype=float)
-    Kd_Cu=np.empty((len_S_Mantle, len(M)), dtype=float)
+    Kd_el=np.empty((len_S_Mantle, len(M)), dtype=float)
     DeltaXMeltTot=np.empty((len_S_Mantle, len(M)), dtype=float)
 
 
-    # Loop for Cu
+    # Loop for element
     for i in range(0, len(M)):
 
         # If length of KDs>1, need to extract right one for each loop
@@ -97,15 +120,13 @@ def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
             KDs_trim=KDs.iloc[i].to_frame().T.reset_index(drop=True)
         else:
             KDs_trim=KDs
-        KdCuSulf=KDs_trim['sulf']
+        KdelSulf=KDs_trim['sulf']
 
         # If length of Modes is >1, need to extract the right one for each loop
         if len(Modes)>1:
-            KdCuSil=Modes.iloc[i].mul(KDs_trim).sum(axis=1).iloc[0]
-            KdBaSil=Modes.iloc[i].mul(KDs_trim).sum(axis=1).iloc[0]
+            KdelSil=Modes.iloc[i].mul(KDs_trim).sum(axis=1).iloc[0]
         else:
-            KdCuSil=Modes.mul(KDs_trim).sum(axis=1)
-            KdBaSil=Modes.mul(KDs_trim).sum(axis=1)
+            KdelSil=Modes.mul(KDs_trim).sum(axis=1)
 
 
 
@@ -116,14 +137,14 @@ def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
         if i==0: # Setting up the system before any melting takes place
             S_residue[:,i]=S_Mantle # Initial S contents of mantle before any melting set at those defined in S_Mantle
             XSulf[:,i]=S_residue[:,i]/S_Sulf # Proportion (by mass) of sulfides in the source
-            elem_residue[:,i]=elem_Per # Initial Cu content of peridotite mantle
-            elem_Melt_Inst[:,i]=0 # No melting, so no Cu in the instantaneous melt
-            elem_Melt_Agg[:,i]=0 # No melting, so no Cu in the aggregated melt
+            elem_residue[:,i]=elem_Per # Initial el content of peridotite mantle
+            elem_Melt_Inst[:,i]=0 # No melting, so no el in the instantaneous melt
+            elem_Melt_Agg[:,i]=0 # No melting, so no el in the aggregated melt
             DeltaM[i]=0 # No change in the amount of peridotite residue
             DeltaXSulf[:,i]=0 # No change in the proportion of sulfide
             DeltaXSil[:,i]=0  # No change in the proportion of silicate
             P[:,i]=0          # No melting, so no preferential melting of different minerals
-            Kd_Cu[:,i]=KdCuSil* (1- XSulf[:,i]) + KdCuSulf* (XSulf[:,i]) # Bulk Kd for the mantle before any melting occurs
+            Kd_el[:,i]=KdelSil* (1- XSulf[:,i]) + KdelSulf* (XSulf[:,i]) # Bulk Kd for the mantle before any melting occurs
             X_FStep[i]=0 # No melt, so no melt proportion made in this step
             X_FStart[i]=0 # as above
             DeltaXMeltTot[:,i]=0 # as above
@@ -138,10 +159,10 @@ def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
             DeltaXSulf[:,i]=(S_residue[:,i-1]-S_residue[:,i])/S_Sulf # Equation 5
             DeltaXSil[:,i]=DeltaM[i]- DeltaXSulf[:,i] # Equation 6
 
-            Kd_Cu[:,i]=KdCuSil* (1- XSulf[:,i]) + KdCuSulf* (XSulf[:,i]) # Equation 8
-            P[:,i] = KdCuSil* ( DeltaXSil[:,i]/DeltaM[i] ) + (KdCuSulf * (DeltaXSulf[:,i]/DeltaM[i])) # Equation 9
+            Kd_el[:,i]=KdelSil* (1- XSulf[:,i]) + KdelSulf* (XSulf[:,i]) # Equation 8
+            P[:,i] = KdelSil* ( DeltaXSil[:,i]/DeltaM[i] ) + (KdelSulf * (DeltaXSulf[:,i]/DeltaM[i])) # Equation 9
 
-            elem_Melt_Inst[:,i]=elem_residue[:,i-1]/ ( Kd_Cu[:,i-1] + (1-P[:,i])*X_FStep[i] ) # Equation 7
+            elem_Melt_Inst[:,i]=elem_residue[:,i-1]/ ( Kd_el[:,i-1] + (1-P[:,i])*X_FStep[i] ) # Equation 7
             elem_residue[:,i]=( elem_residue[:,i-1] - elem_Melt_Inst[:,i] * X_FStep[i] )/( 1- X_FStep[i] ) # Equation 10
             X_FStart[i]=DeltaM[i]/(1-M[i]) #Equation 13
             elem_Melt_Agg[:,i]=(elem_Melt_Agg[:,i-1]*(1-X_FStart[i])) + (elem_Melt_Inst[:,i]* X_FStart[i]) # Equation 12
@@ -160,7 +181,7 @@ def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
 
     df_out_S0=pd.DataFrame(data={'F': 1-M,
                         'M': M,
-                    '{}_KD'.format(elx): Kd_Cu[0,:],
+                    '{}_KD'.format(elx): Kd_el[0,:],
                     '{}_Melt_Agg'.format(elx): elem_Melt_Agg[0,:],
                 '{}_Melt_Inst'.format(elx): elem_Melt_Inst[0,:],
                 '{}_Residue'.format(elx): elem_residue[0,:],
@@ -180,6 +201,15 @@ def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
 
 def calculate_inst_melts_Thermocalc(Thermocalc_df):
     """ Calculates instantaneous melts from Thermocalc aggregated melt outputs
+    Parameters
+    ----------------
+    Thermocalc_df: pd.DataFrame
+        Dataframe of thermocalc outputs (aggregated melts)
+
+    Returns
+    ----------------
+    pd.DataFrame: Instantaneous liquids.
+
     """
     SiO2_EJ=Thermocalc_df['SiO2']
     #TiO2_EJ=Thermocalc_df['TiO2'] - No Ti, ask Ellie
