@@ -59,6 +59,24 @@ This video shows how to model Cu and Ba behavoir during mantle melting in the pr
 ---------
 
 
+Monte Carlo Simulations 1
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This video gives an introduction to how to perform Monte Carlo simulations in PySulfSat
+
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/kpTxGvGTSCI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+---------
+
+Monte Carlo Simulations 2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This video shows a real life example, propagating uncertainty in calculated S6/ST for Muth and Wallace (2021)
+
+.. raw:: html
+
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/5YUKIx3op9w" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+---------
+
 
 Other useful things
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

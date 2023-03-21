@@ -1571,16 +1571,16 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
 
     Smythe_calcs['log_SCSS_ideal']=(
 
-(122175-80.28*T_K+8.474*T_K*np.log(T_K))/(8.314*T_K)+9.087+(Smythe_calcs['Si_XA_ideal']+Smythe_calcs['Ti_XA_ideal']
+(122175-80.28*T_K.astype(float)+8.474*T_K*np.log(T_K.astype(float)))/(8.314*T_K.astype(float))+9.087+(Smythe_calcs['Si_XA_ideal']+Smythe_calcs['Ti_XA_ideal']
 +Smythe_calcs['Al_XA_ideal']+Smythe_calcs['Mg_XA_ideal']+Smythe_calcs['Fe2_XA_ideal']+Smythe_calcs['Ca_XA_ideal']
-+Smythe_calcs['Na_XA_ideal']+Smythe_calcs['K_XA_ideal']+Smythe_calcs['H_XA_ideal']+Smythe_calcs['Si*Fe_ideal'])/T_K
-+np.log(df_c['Fe_FeNiCu_Sulf_calc'])-np.log(Smythe_calcs['Fe2_wt_atom'])-269.4*0.1*P_kbar/T_K
++Smythe_calcs['Na_XA_ideal']+Smythe_calcs['K_XA_ideal']+Smythe_calcs['H_XA_ideal']+Smythe_calcs['Si*Fe_ideal'])/T_K.astype(float)
++np.log(df_c['Fe_FeNiCu_Sulf_calc'])-np.log(Smythe_calcs['Fe2_wt_atom'])-269.4*0.1*P_kbar/T_K.astype(float)
 
 
     )
 
 
-    Smythe_calcs['SCSS2_ppm_ideal_Smythe2017']=np.exp(Smythe_calcs['log_SCSS_ideal'])
+    Smythe_calcs['SCSS2_ppm_ideal_Smythe2017']=np.exp(Smythe_calcs['log_SCSS_ideal'].astype(float))
     Smythe_calcs['SCSS2_ppm_ideal_Smythe2017_1sigma']=Smythe_calcs['SCSS2_ppm_ideal_Smythe2017']*0.273169775211857
     Smythe_calcs['T_Input_K']=T_K
     Smythe_calcs['P_Input_kbar']=P_kbar
