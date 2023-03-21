@@ -22,7 +22,7 @@ If you are using Jupyter Notebooks or Jupyter Lab, you can also install it by en
 
    !pip install PySulfSat
 
-You then need to import PySulfSat into the script you are running code in. In all the examples, we import Themobar as pt.:
+You then need to import PySulfSat into the script you are running code in. In all the examples, we import PySulfSat as ss:
 
 .. code-block:: python
 
