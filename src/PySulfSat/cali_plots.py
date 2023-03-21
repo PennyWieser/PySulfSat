@@ -40,6 +40,12 @@ def return_cali_dataset(model=None):
         O2022_CS6:  ONeill and Mavrogenes (2022)
         BW2022_CS6: Boulliung and Wood (2022)
 
+    Returns
+    -------
+    pd.DataFrame
+        dataframe of the calibration dataset, with column headings MgO_Liq, SiO2_Liq etc.
+
+
     """
 
     #SCSS models

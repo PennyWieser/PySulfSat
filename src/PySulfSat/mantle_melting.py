@@ -8,7 +8,7 @@ import warnings as w
 def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
                         N=3001, F=None,
                         S_Sulf=363636, elem_Per=30,
-                        S_Mantle=[300, 200, 100, 50, 0],
+                        S_Mantle=200,
                         S_Melt_SCSS_2_ppm=980.7872088,
                         Prop_S6=0,
                         KdCuSulf=800,
@@ -23,9 +23,15 @@ def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
     -----------
     N: int
         Number of iterative steps for melting.
+
+    Either
+
     M_Max: float
         Amount of peridotite left at final step. E.g. M_Max=0.7
         calculates 0-30% melting (F=1-M)
+
+    F: np.array
+        F you want
     Modes: Pandas.Dataframe
         Dataframe of ol-opx-cpx-sp modes, with column headings 'ol',
         'opx', 'cpx', 'sp'
@@ -65,19 +71,21 @@ def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
     X_FStep=np.empty(len(M), dtype=float)
     X_FStart=np.empty( len(M), dtype=float)
 
+    len_S_Mantle=1
+
 # These ones have 2 dimensions, one for different M steps, one for different mantle S contents
-    S_residue= np.empty( (len(S_Mantle), len(M)), dtype=float)
-    XSulf= np.empty( (len(S_Mantle), len(M)), dtype=float)
-    elem_residue= np.empty( (len(S_Mantle), len(M)), dtype=float)
-    elem_Melt_Inst= np.empty( (len(S_Mantle), len(M)), dtype=float)
-    elem_Melt_Agg= np.empty( (len(S_Mantle), len(M)), dtype=float)
-    S_Melt_Agg= np.empty( (len(S_Mantle), len(M)), dtype=float)
-    S_Melt_Inst= np.empty( (len(S_Mantle), len(M)), dtype=float)
-    DeltaXSulf=np.empty( (len(S_Mantle), len(M)), dtype=float)
-    DeltaXSil=np.empty( (len(S_Mantle), len(M)), dtype=float)
-    P=np.empty( (len(S_Mantle), len(M)), dtype=float)
-    Kd_Cu=np.empty( (len(S_Mantle), len(M)), dtype=float)
-    DeltaXMeltTot=np.empty( (len(S_Mantle), len(M)), dtype=float)
+    S_residue= np.empty((len_S_Mantle, len(M)), dtype=float)
+    XSulf= np.empty((len_S_Mantle, len(M)), dtype=float)
+    elem_residue= np.empty((len_S_Mantle, len(M)), dtype=float)
+    elem_Melt_Inst= np.empty((len_S_Mantle, len(M)), dtype=float)
+    elem_Melt_Agg= np.empty((len_S_Mantle, len(M)), dtype=float)
+    S_Melt_Agg= np.empty((len_S_Mantle, len(M)), dtype=float)
+    S_Melt_Inst= np.empty((len_S_Mantle, len(M)), dtype=float)
+    DeltaXSulf=np.empty((len_S_Mantle, len(M)), dtype=float)
+    DeltaXSil=np.empty((len_S_Mantle, len(M)), dtype=float)
+    P=np.empty((len_S_Mantle, len(M)), dtype=float)
+    Kd_Cu=np.empty((len_S_Mantle, len(M)), dtype=float)
+    DeltaXMeltTot=np.empty((len_S_Mantle, len(M)), dtype=float)
 
 
     # Loop for Cu

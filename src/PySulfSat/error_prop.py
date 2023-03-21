@@ -14,12 +14,15 @@ from PySulfSat.core_calcs import *
 def add_noise_1var(var, error_var,
 error_type="Abs", error_dist="normal", N_dup=1000, sample_i=0, df_values=None):
 
-    """ Takes 1 row of pd series or a float, returns N_dup duplicates following specified error position
+    """ Takes 1 row of pd series, or a float, returns N_dup duplicates following specified error.
+
 
     Parameters
     ---------------
-    var: pd.Series or float
-        value to add noise to (e..g, could be 5). If a panda series, sample_i specifies which row it uses
+    var: pd.Series, float, int
+        value to add noise to.
+
+        if pd.Series specify sample_i, the row to use.
 
     error_var: int, float
         error to add (e.g. enter 5 to add 1sigma=5 Kelvin error to temperature)
@@ -36,7 +39,7 @@ error_type="Abs", error_dist="normal", N_dup=1000, sample_i=0, df_values=None):
 
     Returns
     ----------
-    panda series with len N_dup
+    panda series with a length of N_dup (e.g. var+noise, var+noise, var+noise... N_Dup)
 
     """
     sample_i=0
@@ -68,10 +71,86 @@ error_type="Abs", error_dist="normal", N_dup=1000, sample_i=0, df_values=None):
 
     return var_with_noise
 
+
+def add_noise_series(var, error_var,  error_type="Abs", error_dist="normal", N_dup=1000):
+
+    """  This function takes a panda series 'var' and adds noise from 'error_var', with attributions
+    depending on the following parameters. It returns a panda series having duplicated each input row N_dup times, with noise added.
+    (it relies on the function add_noise_1var to duplicate each individual row N times).
+
+    Parameters
+    ---------------
+    var: pd.Series
+        column of data you wish to add noise to.
+
+    error_var:pd.Series, int, float
+        error to add. Can be a column of errors with the same length as var, or a fixed error for all rows in var.
+
+    N_dup: int
+        Number of duplicates to make (e.g., 1000 synthetic values)
+
+    error_type: str, 'Abs' or 'Perc'
+        Whether the inputted errors are absolute errors, or percentage errors
+
+    err_dist: str, "normal" (default) or "uniform"
+        whether the added error is normally or uniformly distributed
+
+    Returns
+    ----------
+    panda series with a length of N_dup (e.g. var+noise, var+noise, var+noise... N_Dup)
+
+    """
+    if isinstance(error_var, pd.Series):
+        if len(var)!=len(error_var):
+            raise TypeError('Input variable and error variable panda series are not the same length')
+
+
+
+    len_loop=len(var)
+    All_outputs=pd.DataFrame([])
+    Std_dev_var=np.empty(len_loop)
+    Mean_var=np.empty(len_loop)
+    Med_var=np.empty(len_loop)
+
+
+
+    for i in range(0, len_loop):
+
+        # If user has entered a pandas series for error, takes right one for each loop
+        if type(error_var) is pd.Series:
+            error_var=error_var.iloc[i]
+        else:
+            error_var=error_var
+
+        if type(var) is pd.Series:
+            var_i=var.iloc[i]
+        else:
+            var_i=var
+
+
+        Error_MC=add_noise_1var(var=var_i,
+        sample_i=i, error_var=error_var, N_dup=N_dup,
+        error_dist=error_dist, error_type=error_type)
+
+
+
+
+
+        if i==0:
+            All_outputs=Error_MC
+        else:
+            All_outputs=np.concatenate((All_outputs, Error_MC), axis=0)
+
+    if isinstance(All_outputs, np.ndarray):
+        All_outputs=pd.Series(All_outputs)
+
+
+    return All_outputs
+
 def av_noise_samples_series(calc, sampleID):
     '''
     This function calculates the mean, median, standard devation, maximum and
-    minimum value of rows specified by "calc" based on values in "Sample ID" where both inputs are panda series.
+    minimum value of the values in the pd.Series "calc", averaging rows with the same value of SampleID.
 
     Parameters
     -------
@@ -84,7 +163,8 @@ def av_noise_samples_series(calc, sampleID):
     -------
 
     Dataframe with headings "Sample", "Mean_calc", "Median_calc",
-    "St_dev_calc", "Max_calc", "Min_calc"
+    "St_dev_calc", "Max_calc", "Min_calc", with a number of rows corresponding to the
+    number of unique values in SampleID
 
     '''
 
@@ -121,79 +201,25 @@ def av_noise_samples_series(calc, sampleID):
 
 
 
-def add_noise_series(var, error_var,  error_type="Abs", error_dist="normal", N_dup=1000, Sample_ID=None, no_noise=False, df_values=None):
 
-    """  This function takes a panda series 'var' and adds noise from 'error_var', with attributions
-    depending on the following parameters. It returns a panda series having duplicated each input row N_dup times, with noise added.
-
-    """
-
-
-
-    len_loop=len(var)
-    All_outputs=pd.DataFrame([])
-    Std_dev_var=np.empty(len_loop)
-    Mean_var=np.empty(len_loop)
-    Med_var=np.empty(len_loop)
-
-
-
-    for i in range(0, len_loop):
-
-        # If user has entered a pandas series for error, takes right one for each loop
-        if type(error_var) is pd.Series:
-            error_var=error_var.iloc[i]
-        else:
-            error_var=error_var
-
-        if type(var) is pd.Series:
-            var_i=var.iloc[i]
-        else:
-            var_i=var
-
-
-        Error_MC=add_noise_1var(var=var_i,
-        sample_i=i, error_var=error_var, N_dup=N_dup,
-        error_dist=error_dist, error_type=error_type)
-
-
-
-
-
-
-        # MC for each FI
-        #All_outputs=pd.concat([All_outputs, Error_MC], axis=0)
-        if i==0:
-            All_outputs=Error_MC
-        else:
-            All_outputs=np.concatenate((All_outputs, Error_MC), axis=0)
-    #     # get av and mean
-    #     Std_dev_var[i]=np.nanstd(Error_MC)
-    #     Mean_var[i]=np.nanmean(Error_MC)
-    #     Med_var[i]=np.nanmedian(Error_MC)
-    #
-    #
-    #
-    # Av_outputs=pd.DataFrame(data={'Sample_ID': Sample,
-    #                                   'Mean_var': Mean_var,
-    #                                   'Std_var': Std_var,
-    #                                    'Med_var': Med_var})
-
-
-
-    return All_outputs
 
 def duplicate_dataframe(df, N_dup=1000):
     """ This function takes a dataframe, and for each row, makes N_dup duplicates, end on end
     (e.g. row1-row2-row3 goes to row1-row1-row1-rowN_dup, row2-row2-row2-rowN_dup)
 
-    parameters
+    Parameters
     --------------
     df: pd.DataFrame
         dataframe that needs duplicating. Can have whatever rows and columns you want
 
     N_dup: int
-        Number of times to duplicate the row.
+        Number of times to duplicate each row.
+
+
+    Returns
+    --------------
+    pd.DataFrame
+        dataframe with each row from original dataframe duplicated N times (Row1-row1-row1.... row2-row2-row2, row3-row3-row3)
 
     """
 
@@ -205,11 +231,39 @@ def duplicate_dataframe(df, N_dup=1000):
     return Dupdf
 
 def add_noise_2_dataframes(df_values, df_err,
-        error_type="Abs", error_dist="normal", N_dups=10, sample_name_col='Sample_ID_Liq'):
-    """ This function takes
+        error_type="Abs", error_dist="normal", N_dups=10, sample_name_col='Sample_ID'):
+    """ This function takes each value in df_values and adds noise in the corresponding row and column from df_err, and duplicates the row N times.
+    e.g. for N_dups=10, 10 duplicate rows are made for each row in df_values, with the values pertubed based on noise in df_err
+
+    Parameters
+    --------------
+    sample_name_col: str
+        Name of column with sample name in each dataframe.
+
+    df_values: pd.DataFrame
+        dataframe of preferred values
+
+    df_err: pd.DataFrame
+        dataframe of error values. Needs to have the same number of rows, and exact same columns as df_values, but with the string '_Err' after each column.
+        The only exception is the column 'sample_name_col' doesnt have to have _Err after. Note, the order has to be the same,
+        the function doesnt automatically match rows based on sample names (it could, but wit would be slower than turning it all into numpy arrays and doing matrix math.
+
+    N_dup: int
+        Number of duplicates to make (e.g., 1000 synthetic values)
+
+    error_type: str, 'Abs' or 'Perc'
+        Whether the inputted errors are absolute errors, or percentage errors
+
+    err_dist: str, "normal" (default) or "uniform"
+        whether the added error is normally or uniformly distributed
+
+    Returns
+    --------------
+    pd.DataFrame with the length of the original dataframe*  N_Dups
 
     """
-
+    if len(df_values)!=len(df_err):
+        raise InputError('Length of df1 and df2 need to be the same')
     df1=df_values.copy()
     df2=df_err.copy()
 
@@ -223,7 +277,8 @@ def add_noise_2_dataframes(df_values, df_err,
         s=df1.index
 
     if sample_name_col in df2.columns:
-        df2=df2.drop(sample_name_col)
+
+        df2=df2.drop(sample_name_col, axis=1)
 
 
     s_repeated = pd.Series(np.repeat(s.values, N_dups))
@@ -236,7 +291,7 @@ def add_noise_2_dataframes(df_values, df_err,
 
     # Now check if any columns were missing and return a warning if so
     if set(df1.columns) == set(df2.columns):
-        print('columns match in 2 dataframes')
+        print('Yay. columns match in 2 dataframes')
     else:
         # Find columns that are in df1 but not in df2
         print("Columns in df_values but not in df_err:", set(df1.columns) - set(df2.columns))

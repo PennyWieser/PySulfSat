@@ -864,9 +864,6 @@ def convert_fe_partition_to_fo2(*, liq_comps, T_K, P_kbar,  model="Kress1991", r
 
 
 
-
-
-
     model: str
         "Kress1991" - Uses Kress and Carmichael 1991 to calculate XFe2Fe3 from fo2
         "Put2016_eq6b" - Uses Putirka (2016) expression to calculate XFe2Fe3 from fo2
@@ -939,6 +936,16 @@ mol_mass_SO2=mol_mass_S+mol_mass_O*2
 def convert_S_types(SO3_wt=None, SO3_ppm=None, S_wt=None, S_ppm=None, SO2_wt=None, SO2_ppm=None,
  SO4_wt=None, SO4_ppm=None):
     """ converts SO3 in wt% into S in ppm
+
+    Parameters
+    -------------------
+    SO3_wt, SO3_ppm, S_wt, S_ppm, SO2_wt, SO2_ppm, SO4_wt, SO4_ppm: int, float, pd.Series, np.array
+        S in various units and forms
+    Returns
+    -------------------
+    pd.DataFrame
+        S content in all forms listed.
+
     """
     params = {
         "a": SO3_wt,
@@ -981,16 +988,27 @@ def convert_S_types(SO3_wt=None, SO3_ppm=None, S_wt=None, S_ppm=None, SO2_wt=Non
         SO3=moles_s*mol_mass_SO3
         SO4=moles_s*mol_mass_SO4
 
+        if isinstance(S_wt2, pd.Series) or isinstance(S_wt2, np.ndarray):
+            df=pd.DataFrame(data={
+                                    'S_wt': S_wt2,
+                                    'S_ppm': S_ppm2,
+                                    'SO2_wt': SO2,
+                                    'SO2_ppm': SO2*10**4,
+                                    'SO3_wt': SO3,
+                                    'SO3_ppm': SO3*10**4,
+                                    'SO4_wt': SO4,
+                                    'SO4_ppm': SO4*10**4})
+        else:
+            df=pd.DataFrame(data={
+                                    'S_wt': S_wt2,
+                                    'S_ppm': S_ppm2,
+                                    'SO2_wt': SO2,
+                                    'SO2_ppm': SO2*10**4,
+                                    'SO3_wt': SO3,
+                                    'SO3_ppm': SO3*10**4,
+                                    'SO4_wt': SO4,
+                                    'SO4_ppm': SO4*10**4}, index=[0])
 
-        df=pd.DataFrame(data={
-                                'S_wt': S_wt2,
-                                'S_ppm': S_ppm2,
-                                'SO2_wt': SO2,
-                                'SO2_ppm': SO2*10**4,
-                                'SO3_wt': SO3,
-                                'SO3_ppm': SO3*10**4,
-                                'SO4_wt': SO4,
-                                'SO4_ppm': SO4*10**4})
 
 
 

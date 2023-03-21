@@ -11,7 +11,42 @@ df_ideal_liq = pd.DataFrame(columns=['SiO2_Liq', 'TiO2_Liq', 'Al2O3_Liq',
 'FeOt_Liq', 'MnO_Liq', 'MgO_Liq', 'CaO_Liq', 'Na2O_Liq', 'K2O_Liq',
 'P2O5_Liq', 'H2O_Liq', 'Fe3Fet_Liq', 'Ni_Liq_ppm', 'Cu_Liq_ppm'])
 
-def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, sample_label=None, suffix=None):
+def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, suffix=None):
+    """ This function takes a user input, and reforms the columns into the format required by PySulfSat,
+    In many cases this involves renaming columns to get into the format SiO2_Liq, TiO2_Liq, etc
+
+    Parameters
+    --------------
+    filename: str
+        File name (e.g. 'Test1.xlsx')
+
+    Petrolog: bool
+        True if output from Petrolog3 software, False (default) if not
+
+    MELTS: bool
+        True if loading a MELTS tbl file
+
+
+
+    Optional:
+    sheet_name: str
+        Name of sheet if filename refers to an Excel spreadsheet ('Sheet1')
+
+    suffix: str
+        Suffix which is appended onto all columns. E.g. if you have EPMA data, and you cant be bothered to add
+    '_Liq' to each column manually, it will do so here (but for all columns, not just the oxides)
+
+
+
+    Returns
+    --------------
+    pd.DataFrame
+        DataFrame of all input data, renamed columns for liquids at start, other columns appended onto the back.
+
+
+
+    """
+
     if 'csv' in filename:
         my_input = pd.read_csv(filename)
 
@@ -130,7 +165,27 @@ df_ideal_liq_noise = pd.DataFrame(columns=['SiO2_Liq_Err', 'TiO2_Liq_Err', 'Al2O
 'P2O5_Liq_Err', 'H2O_Liq_Err', 'Fe3Fet_Liq_Err', 'Ni_Liq_ppm_Err', 'Cu_Liq_ppm_Err'])
 
 def import_data_noise(filename, sheet_name=None, sample_label=None):
+    """ This function takes a user input for errors, and reforms the columns into the format required by PySulfSat,
+    Input columns should have _Err after them.
 
+    Parameters
+    --------------
+    filename: str
+        File name (e.g. 'Test1.xlsx')
+
+    sheet_name: str
+        Name of sheet if filename refers to an Excel spreadsheet ('Sheet1')
+
+
+
+    Returns
+    --------------
+    pd.DataFrame
+        DataFrame of all input data, renamed columns for liquids at start, other columns appended onto the back.
+
+
+
+    """
     if 'csv' in filename:
         my_input = pd.read_csv(filename)
 
