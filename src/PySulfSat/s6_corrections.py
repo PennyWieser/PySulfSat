@@ -489,8 +489,8 @@ def calculate_OM2022_S6St(df, T_K, logfo2=None,
         logfo2_calc=deltaQFM-25050/T_K+8.58
         liqs['deltaQFM_calc']=deltaQFM
         liqs['logfo2_calc']=logfo2_calc
-    if C5==2: #If specify Fe3Fet
-        deltaQFM=logfo2-25050/T_K+8.58
+    if C5==2: #If specify logfo2
+        deltaQFM=logfo2-8.58+25050/T_K
         liqs['deltaQFM_calc']=deltaQFM
 
     if C5==2: # e.g. if Fe3Fet not given

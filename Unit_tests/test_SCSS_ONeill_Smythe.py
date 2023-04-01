@@ -35,14 +35,14 @@ S_Sulf = 33*(10**4)
 class test_mantlemelt(unittest.TestCase):
     def test_Simple_mantle_Cu(self):
         self.assertAlmostEqual(ss.Lee_Wieser_sulfide_melting(Modes=Modes, KDs=KDs_Cu,
-                        N=100, S_Mantle=[200],
+                        N=100, S_Mantle=200,
                         S_Sulf=S_Sulf, S_Melt_SCSS_2_ppm=1000,
                         elem_Per=30, Prop_S6=0)['Cu_Melt_Agg'][3], 59.205447166128984,
 decimalPlace, "Inst Cu doesnt match test value")
 
     def test_Simple_mantle_S(self):
         self.assertAlmostEqual(ss.Lee_Wieser_sulfide_melting(Modes=Modes, KDs=KDs_Cu,
-                        N=100, S_Mantle=[200],
+                        N=100, S_Mantle=200,
                         S_Sulf=S_Sulf, S_Melt_SCSS_2_ppm=1000,
                         elem_Per=30, Prop_S6=0)['S_Residue'][3], 175.2577319587629,
 decimalPlace, "Residual S doesnt match test value")
