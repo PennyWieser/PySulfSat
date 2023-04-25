@@ -125,7 +125,11 @@ def calculate_S6St_Nash2019(T_K, Fe3Fet_Liq):
     # First, calculate Fe3/Fe2 from Fe3/Fet
     Fe3Fe2=Fe3Fet_Liq/(1-Fe3Fet_Liq)
     #print(Fe3Fe2)
-    log_Fe3Fe2=np.log10(Fe3Fe2.astype(float))
+    if isinstance(Fe3Fe2, float) or isinstance(Fe3Fe2, int): 
+        log_Fe3Fe2=np.log10(Fe3Fe2)
+
+    else:
+        log_Fe3Fe2=np.log10(Fe3Fe2.astype(float))
 
 
     log_S6S2=8*log_Fe3Fe2 + 8.7436*10**6/(T_K**2) - 27703/T_K + 20.273

@@ -634,9 +634,13 @@ Ni_Liq=None, Cu_Liq=None, Fe_Sulf=None, Cu_Sulf=None, Ni_Sulf=None, Ni_Sulf_init
     Cu_FeNiCu_Sulf=Cu_FeNiCu_Sulf, Ni_FeNiCu_Sulf=Ni_FeNiCu_Sulf,
     Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, df_c=df_c, T_K=T_K)
 
+    if isinstance(T_K, pd.Series):
+        T_K=T_K.astype(float)
+    if isinstance(P_kbar, pd.Series):
+        P_kbar=P_kbar.astype(float)
 
 
-    scss=Fe_FeNiCu_Sulf_calc['Fe_FeNiCu_Sulf_calc'].astype(float)*np.exp(13.88-9744/T_K.astype(float)-328*(P_kbar.astype(float)/10)/T_K.astype(float))+104*df_c['H2O_Liq']
+    scss=Fe_FeNiCu_Sulf_calc['Fe_FeNiCu_Sulf_calc'].astype(float)*np.exp(13.88-9744/T_K-328*(P_kbar/10)/T_K)+104*df_c['H2O_Liq']
 
     df_c.insert(0, 'SCSS2_ppm', scss)
     return df_c
@@ -1541,7 +1545,7 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
     Cu_FeNiCu_Sulf=Cu_FeNiCu_Sulf, Ni_FeNiCu_Sulf=Ni_FeNiCu_Sulf,
     Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, df_c=df_c, T_K=T_K)
 
-    print(df_c.columns)
+    
 
 
     # Calculating the different liquid components
@@ -1568,13 +1572,14 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
     Smythe_calcs['H_XA_non_ideal']=Smythe_calcs['H_wt_atom']*(-17766.114)
     Smythe_calcs['Si*Fe_non_ideal']=(Smythe_calcs['Si_wt_atom']*Smythe_calcs['Fe2_wt_atom'])*117815.515
 
+    if isinstance(T_K, pd.Series):
+        T_K=T_K.astype(float)
 
     Smythe_calcs['log_SCSS_ideal']=(
-
-(122175-80.28*T_K.astype(float)+8.474*T_K*np.log(T_K.astype(float)))/(8.314*T_K.astype(float))+9.087+(Smythe_calcs['Si_XA_ideal']+Smythe_calcs['Ti_XA_ideal']
+(122175-80.28*T_K+8.474*T_K*np.log(T_K))/(8.314*T_K)+9.087+(Smythe_calcs['Si_XA_ideal']+Smythe_calcs['Ti_XA_ideal']
 +Smythe_calcs['Al_XA_ideal']+Smythe_calcs['Mg_XA_ideal']+Smythe_calcs['Fe2_XA_ideal']+Smythe_calcs['Ca_XA_ideal']
-+Smythe_calcs['Na_XA_ideal']+Smythe_calcs['K_XA_ideal']+Smythe_calcs['H_XA_ideal']+Smythe_calcs['Si*Fe_ideal'])/T_K.astype(float)
-+np.log(df_c['Fe_FeNiCu_Sulf_calc'])-np.log(Smythe_calcs['Fe2_wt_atom'])-269.4*0.1*P_kbar/T_K.astype(float)
++Smythe_calcs['Na_XA_ideal']+Smythe_calcs['K_XA_ideal']+Smythe_calcs['H_XA_ideal']+Smythe_calcs['Si*Fe_ideal'])/T_K
++np.log(df_c['Fe_FeNiCu_Sulf_calc'])-np.log(Smythe_calcs['Fe2_wt_atom'])-269.4*0.1*P_kbar/T_K
 
 
     )
