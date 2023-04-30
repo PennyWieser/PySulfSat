@@ -88,3 +88,106 @@ def calculate_mass_frac_sulf(S_model=None, S_init=None, F_melt=None, S_sulf=None
 
     X_sulf=(S_init-F_melt*S_model)/S_sulf
     return X_sulf
+
+
+def calculate_S_isotope_factors(*, T_K, S6St_Liq=None):
+    """ Calculates S fractionation factor as a function of temperature. If S6St_Liq is entered,
+    the fractionaton factor for S2 and SO4 are combined to give one for the overall melt.
+
+    All calcs use FeS_H2S fractionatoin factor from Ohmoto and Rye 1979
+    Other fractionation factors from:
+        Miyoshi et al. (1984), _M, https://doi.org/10.2343/geochemj.18.75
+        or
+        Fiege et al. (2015), _F, /10.1016/j.chemgeo.2014.11.012.
+
+    Parameters
+    -------------------
+    T_K: int, float, pd.Series, np.array
+        Temperature in Kelvin
+    S6st_Liq: optional, int, float, pd.Series, np.array
+        S6/St ratio in liquid, used to calculate a total FeS-S in melt fractionation factor.
+
+    Returns
+    -----------------
+    df: pd.DataFrame of different fractionatoin factors
+
+
+    """
+    # if (isinstance(S6St_Liq, float) or instance(S6St_Liq, int)) and (isinstance(T_K, float) or isinstance(T_K, int)):
+    #     type='all floats/integers'
+    # elif (isinstance(S6St_Liq, float) or instance(S6St_Liq, int)) and  ~(isinstance(T_K, float) or isinstance(T_K, int)):
+    #     # T isnt a float or integer, but S is, so need to scale up S6St to be the same length
+    #
+    #
+    if isinstance(T_K, (int, float)) and isinstance(S6St_Liq, (pd.Series, np.ndarray)):
+        #print('replacing T with series')
+        T_K = pd.Series(np.full(S6St_Liq.shape, T_K))
+    elif isinstance(S6St_Liq, (int, float)) and isinstance(T_K, (pd.Series, np.ndarray)):
+        #print('replacing S6 with pd.Series')
+        S6St_Liq = pd.Series(np.full(T_K.shape, S6St_Liq))
+
+
+    T=T_K
+    T_C=T_K-273.15
+
+    lna_FeS_H2S_1000=0.1*(1000/T)**3 # From Ohmoto and Rye 1979
+    lna_S2_SO4_1000_M=-7.4*(1000/T)**2+0.19 # from Miyoshi 1984
+    lna_H2S_SO4_1000_M=-6.5*(1000/T)**2+0.19 # from Miyoshi 1984
+    lna_H2S_S2_1000_M=lna_H2S_SO4_1000_M-lna_S2_SO4_1000_M
+    lna_FeS_S2_1000_M=lna_FeS_H2S_1000+lna_H2S_S2_1000_M
+    lna_FeS_SO4_1000_M=lna_FeS_H2S_1000+lna_H2S_SO4_1000_M
+
+    # From Fiege
+    lna_H2S_SO4_1000_F=-6.5*(1000/T)**2+0.19# From Fiege
+
+    lna_H2S_S2_1000_F=10.84*(1000/T)**2-2.5 # From Fiege
+    lna_S2_SO4_1000_F=lna_H2S_SO4_1000_F-lna_H2S_S2_1000_F # from Fiege
+
+    lna_FeS_S2_1000_F=lna_FeS_H2S_1000+lna_H2S_S2_1000_F
+    lna_FeS_SO4_1000_F=lna_FeS_H2S_1000+lna_H2S_SO4_1000_F
+
+    if isinstance(T_K, int) or isinstance(T_K, float):
+
+        df=pd.DataFrame(data={'T_K': T_K,
+                              'T_C': T_C,
+                              'lna_FeS_H2S_1000': lna_FeS_H2S_1000,
+                              'lna_S2_SO4_1000_M':  lna_S2_SO4_1000_M,
+                              'lna_H2S_SO4_1000_M': lna_H2S_SO4_1000_M,
+                              'lna_H2S_S2_1000_M': lna_H2S_S2_1000_M,
+                              'lna_FeS_S2_1000_M': lna_FeS_S2_1000_M,
+                              'lna_FeS_SO4_1000_M': lna_FeS_SO4_1000_M,
+                              'lna_H2S_SO4_1000_F': lna_H2S_SO4_1000_F,
+                              'lna_H2S_S2_1000_F': lna_H2S_S2_1000_F,
+                              'lna_S2_SO4_1000_F': lna_S2_SO4_1000_F,
+                              'lna_FeS_S2_1000_F': lna_FeS_S2_1000_F,
+                              'lna_FeS_SO4_1000_F': lna_FeS_SO4_1000_F}, index=[0])
+    else:
+            df=pd.DataFrame(data={'T_K': T_K,
+                              'T_C': T_C,
+                              'lna_FeS_H2S_1000': lna_FeS_H2S_1000,
+                              'lna_S2_SO4_1000_M':  lna_S2_SO4_1000_M,
+                              'lna_H2S_SO4_1000_M': lna_H2S_SO4_1000_M,
+                              'lna_H2S_S2_1000_M': lna_H2S_S2_1000_M,
+                              'lna_FeS_S2_1000_M': lna_FeS_S2_1000_M,
+                              'lna_FeS_SO4_1000_M': lna_FeS_SO4_1000_M,
+                              'lna_H2S_SO4_1000_F': lna_H2S_SO4_1000_F,
+                              'lna_H2S_S2_1000_F': lna_H2S_S2_1000_F,
+                              'lna_S2_SO4_1000_F': lna_S2_SO4_1000_F,
+                              'lna_FeS_S2_1000_F': lna_FeS_S2_1000_F,
+                              'lna_FeS_SO4_1000_F': lna_FeS_SO4_1000_F})
+    df['a_FeS_S2_F']=np.exp(df['lna_FeS_S2_1000_F']/1000)
+    df['a_FeS_SO4_F']=np.exp(df['lna_FeS_SO4_1000_F']/1000)
+    df['a_FeS_S2_M']=np.exp(df['lna_FeS_S2_1000_M']/1000)
+    df['a_FeS_SO4_M']=np.exp(df['lna_FeS_SO4_1000_M']/1000)
+    if S6St_Liq is not None:
+        Sprop=S6St_Liq
+        if len(df)==1:
+            df['a_FeS_ST_F']=Sprop*df['a_FeS_SO4_F'].iloc[0]+ (1-Sprop)*df['a_FeS_S2_F'].iloc[0]
+            df['a_FeS_ST_M']=Sprop*df['a_FeS_SO4_M'].iloc[0]+ (1-Sprop)*df['a_FeS_S2_M'].iloc[0]
+        else:
+            df['a_FeS_ST_F']=Sprop*df['a_FeS_SO4_F']+ (1-Sprop)*df['a_FeS_S2_F']
+            df['a_FeS_ST_M']=Sprop*df['a_FeS_SO4_M']+ (1-Sprop)*df['a_FeS_S2_M']
+
+    return df
+
+
