@@ -300,7 +300,7 @@ error_S_Sulf=error_S_Sulf_i, error_type_S_Sulf=error_type_S_Sulf, error_dist_S_S
 error_Vol=error_Vol_i, error_type_Vol=error_type_Vol, error_dist_Vol=error_dist_Vol,
 error_sulf_dens=error_sulf_dens_i, error_type_sulf_dens=error_type_sulf_dens,
 error_melt_dens=error_melt_dens_i, error_type_melt_dens=error_type_melt_dens, error_dist_melt_dens=error_dist_melt_dens, error_dist_sulf_dens=error_dist_sulf_dens,
-plot_figure=True, len_loop=1)
+ len_loop=1)
 
 
 

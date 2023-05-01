@@ -81,7 +81,7 @@ Welcome to PySulfSat's documentation!
    :caption: Monte Carlo Simulations
 
    Examples/Monte_Carlo_Simulations/Propagating_error
-   Examples/S6St_Testing/CalcS6ST_Muth
+   Examples/S6_S2_Corrections/CalcS6ST_Muth
 
 
 
