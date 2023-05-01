@@ -88,10 +88,12 @@ Welcome to PySulfSat's documentation!
 .. toctree::
    :maxdepth: 2
    :caption: Other useful functions
-   Examples/S_isotope_Fractionation_Models/Frac_factors
+
+
    Examples/Other_Useful_Functions/Calculating_KDs_Kiseeva
    Examples/Other_Useful_Functions/Converting_S_values
    Examples/Other_Useful_Functions/Plotting_Cali_Datasets
+   Examples/S_isotope_Fractionation_Models/Frac_factors
 
 
 
