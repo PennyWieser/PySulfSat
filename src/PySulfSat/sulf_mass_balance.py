@@ -110,6 +110,14 @@ def calculate_S_isotope_factors(*, T_K, S6St_Liq=None):
     Returns
     -----------------
     df: pd.DataFrame of different fractionatoin factors
+    '..._OR79': fractionation factor from Ohmoto and Rye 1979
+    '..._M84' Fractionaton factor from Miyoshi et al. (1984)
+    '..._F15' Fracionation factor from Fiege et al. (2015)
+    if S6ST_Liq is not None:
+    'a_FeS_ST_F15_M84' Sulfide melt fractionatoin factor using a_FeS_S2_F15 and a_FeS_SO4_M84 (Fiege doesnt have SO4-FeS)
+    'a_FeS_ST_M84' Sulfide melt fractionatoin factor using a_FeS_S2_M84 and a_FeS_SO4_M84
+
+
 
 
     """
@@ -138,55 +146,66 @@ def calculate_S_isotope_factors(*, T_K, S6St_Liq=None):
     lna_FeS_SO4_1000_M=lna_FeS_H2S_1000+lna_H2S_SO4_1000_M
 
     # From Fiege
-    lna_H2S_SO4_1000_F=-6.5*(1000/T)**2+0.19# From Fiege
+    #lna_H2S_SO4_1000_F=-6.5*(1000/T)**2+0.19# Fiege doesnt have this term - its from Miyoshi
 
     lna_H2S_S2_1000_F=10.84*(1000/T)**2-2.5 # From Fiege
-    lna_S2_SO4_1000_F=lna_H2S_SO4_1000_F-lna_H2S_S2_1000_F # from Fiege
+    lna_S2_SO4_1000_F=lna_H2S_SO4_1000_M-lna_H2S_S2_1000_F # from Fiege
 
     lna_FeS_S2_1000_F=lna_FeS_H2S_1000+lna_H2S_S2_1000_F
-    lna_FeS_SO4_1000_F=lna_FeS_H2S_1000+lna_H2S_SO4_1000_F
+    #lna_FeS_SO4_1000_F=lna_FeS_H2S_1000+lna_H2S_SO4_1000_M
 
     if isinstance(T_K, int) or isinstance(T_K, float):
 
         df=pd.DataFrame(data={'T_K': T_K,
                               'T_C': T_C,
-                              'lna_FeS_H2S_1000': lna_FeS_H2S_1000,
-                              'lna_S2_SO4_1000_M':  lna_S2_SO4_1000_M,
-                              'lna_H2S_SO4_1000_M': lna_H2S_SO4_1000_M,
-                              'lna_H2S_S2_1000_M': lna_H2S_S2_1000_M,
-                              'lna_FeS_S2_1000_M': lna_FeS_S2_1000_M,
-                              'lna_FeS_SO4_1000_M': lna_FeS_SO4_1000_M,
-                              'lna_H2S_SO4_1000_F': lna_H2S_SO4_1000_F,
-                              'lna_H2S_S2_1000_F': lna_H2S_S2_1000_F,
-                              'lna_S2_SO4_1000_F': lna_S2_SO4_1000_F,
-                              'lna_FeS_S2_1000_F': lna_FeS_S2_1000_F,
-                              'lna_FeS_SO4_1000_F': lna_FeS_SO4_1000_F}, index=[0])
+                              'lna_FeS_H2S_1000_OR79': lna_FeS_H2S_1000,
+                              'lna_S2_SO4_1000_M84':  lna_S2_SO4_1000_M,
+                              'lna_H2S_SO4_1000_M84': lna_H2S_SO4_1000_M,
+                              'lna_H2S_S2_1000_M84': lna_H2S_S2_1000_M,
+                              'lna_FeS_S2_1000_M84': lna_FeS_S2_1000_M,
+                              'lna_FeS_SO4_1000_M84': lna_FeS_SO4_1000_M,
+
+                              'lna_H2S_S2_1000_F15': lna_H2S_S2_1000_F,
+                              'lna_S2_SO4_1000_F15': lna_S2_SO4_1000_F,
+                              'lna_FeS_S2_1000_F15': lna_FeS_S2_1000_F,
+                              }, index=[0])
     else:
             df=pd.DataFrame(data={'T_K': T_K,
                               'T_C': T_C,
-                              'lna_FeS_H2S_1000': lna_FeS_H2S_1000,
-                              'lna_S2_SO4_1000_M':  lna_S2_SO4_1000_M,
-                              'lna_H2S_SO4_1000_M': lna_H2S_SO4_1000_M,
-                              'lna_H2S_S2_1000_M': lna_H2S_S2_1000_M,
-                              'lna_FeS_S2_1000_M': lna_FeS_S2_1000_M,
-                              'lna_FeS_SO4_1000_M': lna_FeS_SO4_1000_M,
-                              'lna_H2S_SO4_1000_F': lna_H2S_SO4_1000_F,
-                              'lna_H2S_S2_1000_F': lna_H2S_S2_1000_F,
-                              'lna_S2_SO4_1000_F': lna_S2_SO4_1000_F,
-                              'lna_FeS_S2_1000_F': lna_FeS_S2_1000_F,
-                              'lna_FeS_SO4_1000_F': lna_FeS_SO4_1000_F})
-    df['a_FeS_S2_F']=np.exp(df['lna_FeS_S2_1000_F']/1000)
-    df['a_FeS_SO4_F']=np.exp(df['lna_FeS_SO4_1000_F']/1000)
-    df['a_FeS_S2_M']=np.exp(df['lna_FeS_S2_1000_M']/1000)
-    df['a_FeS_SO4_M']=np.exp(df['lna_FeS_SO4_1000_M']/1000)
+                              'lna_FeS_H2S_1000_OR79': lna_FeS_H2S_1000,
+                              'lna_S2_SO4_1000_M84':  lna_S2_SO4_1000_M,
+                              'lna_H2S_SO4_1000_M84': lna_H2S_SO4_1000_M,
+                              'lna_H2S_S2_1000_M84': lna_H2S_S2_1000_M,
+                              'lna_FeS_S2_1000_M84': lna_FeS_S2_1000_M,
+                              'lna_FeS_SO4_1000_M84': lna_FeS_SO4_1000_M,
+
+                              'lna_H2S_S2_1000_F15': lna_H2S_S2_1000_F,
+                              'lna_S2_SO4_1000_F15': lna_S2_SO4_1000_F,
+                              'lna_FeS_S2_1000_F15': lna_FeS_S2_1000_F,
+                              })
+
+    df['a_FeS_S2_F15']=np.exp(df['lna_FeS_S2_1000_F15']/1000)
+    #df['a_FeS_SO4_F']=np.exp(df['lna_FeS_SO4_1000_F']/1000)
+    df['a_FeS_S2_M84']=np.exp(df['lna_FeS_S2_1000_M84']/1000)
+    df['a_FeS_SO4_M84']=np.exp(df['lna_FeS_SO4_1000_M84']/1000)
+    df['a_S2_SO4_M84']=np.exp(df['lna_S2_SO4_1000_M84']/1000)
+    df['a_S2_SO4_F15']=np.exp(df['lna_S2_SO4_1000_F15']/1000)
+    df['a_FeS_H2S_OR79']=np.exp(df['lna_FeS_H2S_1000_OR79']/1000)
+    df['a_H2S_S2_M84']=np.exp(df['lna_H2S_S2_1000_M84']/1000)
+    df['a_H2S_S2_F15']=np.exp(df['lna_H2S_S2_1000_F15']/1000)
+    df['a_H2S_SO4_M84']=np.exp(df['lna_H2S_SO4_1000_M84']/1000)
+
+
     if S6St_Liq is not None:
         Sprop=S6St_Liq
         if len(df)==1:
-            df['a_FeS_ST_F']=Sprop*df['a_FeS_SO4_F'].iloc[0]+ (1-Sprop)*df['a_FeS_S2_F'].iloc[0]
-            df['a_FeS_ST_M']=Sprop*df['a_FeS_SO4_M'].iloc[0]+ (1-Sprop)*df['a_FeS_S2_M'].iloc[0]
+            df['a_FeS_ST_F15_M84']=Sprop*df['a_FeS_SO4_M84'].iloc[0]+ (1-Sprop)*df['a_FeS_S2_F15'].iloc[0]
+            df['a_FeS_ST_M84']=Sprop*df['a_FeS_SO4_M84'].iloc[0]+ (1-Sprop)*df['a_FeS_S2_M84'].iloc[0]
+
         else:
-            df['a_FeS_ST_F']=Sprop*df['a_FeS_SO4_F']+ (1-Sprop)*df['a_FeS_S2_F']
-            df['a_FeS_ST_M']=Sprop*df['a_FeS_SO4_M']+ (1-Sprop)*df['a_FeS_S2_M']
+            df['a_FeS_ST_F15_M84']=Sprop*df['a_FeS_SO4_M84']+ (1-Sprop)*df['a_FeS_S2_F15']
+            df['a_FeS_ST_M84']=Sprop*df['a_FeS_SO4_M84']+ (1-Sprop)*df['a_FeS_S2_M84']
+
 
     return df
 
