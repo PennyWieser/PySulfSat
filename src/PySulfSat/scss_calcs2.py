@@ -1545,7 +1545,7 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
     Cu_FeNiCu_Sulf=Cu_FeNiCu_Sulf, Ni_FeNiCu_Sulf=Ni_FeNiCu_Sulf,
     Ni_Liq=Ni_Liq, Cu_Liq=Cu_Liq, df_c=df_c, T_K=T_K)
 
-    
+
 
 
     # Calculating the different liquid components

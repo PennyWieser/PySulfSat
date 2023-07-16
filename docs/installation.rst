@@ -48,7 +48,7 @@ Or in your Jupyter environment:
    !pip install PySulfSat --upgrade
 
 
-For maximum reproducability, you should state which version of PySulfSat you are using. If you have imported PySulfSat as pt, you can find this using:
+For maximum reproducability, you should state which version of PySulfSat you are using. If you have imported PySulfSat as ss, you can find this using:
 
 .. code-block:: python
 

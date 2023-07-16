@@ -294,13 +294,23 @@ error_melt_dens=0, error_type_melt_dens='Abs', error_dist_melt_dens='normal'):
 
 
         # This is the function doing the work to actually make the simulations for each variable.
-        df_synthetic=propagate_s_in_sulfide_ind(N_dup=N_dup, S_Sulf=S_Sulf_i, Vol=Vol_i,
-sulf_dens=sulf_dens_i, melt_dens=melt_dens_i,
-error_S_Sulf=error_S_Sulf_i, error_type_S_Sulf=error_type_S_Sulf, error_dist_S_Sulf=error_dist_S_Sulf,
-error_Vol=error_Vol_i, error_type_Vol=error_type_Vol, error_dist_Vol=error_dist_Vol,
-error_sulf_dens=error_sulf_dens_i, error_type_sulf_dens=error_type_sulf_dens,
-error_melt_dens=error_melt_dens_i, error_type_melt_dens=error_type_melt_dens, error_dist_melt_dens=error_dist_melt_dens, error_dist_sulf_dens=error_dist_sulf_dens,
- len_loop=1)
+        df_synthetic=propagate_s_in_sulfide_ind(N_dup=N_dup,
+        S_Sulf=S_Sulf_i, Vol=Vol_i,
+        sulf_dens=sulf_dens_i,
+        melt_dens=melt_dens_i,
+        error_S_Sulf=error_S_Sulf_i,
+        error_type_S_Sulf=error_type_S_Sulf,
+        error_dist_S_Sulf=error_dist_S_Sulf,
+        error_Vol=error_Vol_i,
+        error_type_Vol=error_type_Vol,
+        error_dist_Vol=error_dist_Vol,
+        error_sulf_dens=error_sulf_dens_i,
+         error_type_sulf_dens=error_type_sulf_dens,
+        error_melt_dens=error_melt_dens_i,
+        error_type_melt_dens=error_type_melt_dens,
+        error_dist_melt_dens=error_dist_melt_dens,
+        error_dist_sulf_dens=error_dist_sulf_dens,
+        len_loop=1)
 
 
 

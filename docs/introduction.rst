@@ -4,7 +4,10 @@ Introduction and Citation
 
 Welcome to PySulfSat- An Open-Source python3 tool for calculating sulfide and sulfate solubility in magmas.
 
-This tool is under review in Volcanica. You can currently cite the preprint: https://doi.org/10.31223/X5K360
+This tool is published in Volcanica - https://doi.org/10.30909/vol.06.01.107127
+
+Please make sure you cite PySulfSat if you use it, along with any of the underlying models you used.
+e.g. 'We calculate the SCSS using the model of Smythe et al. (2017) implemented in the open-source Python3 tool PySulfSat (Wieser and Gleeson, 2023)'
 
 ==============================
 Units
