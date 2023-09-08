@@ -4,6 +4,7 @@ import pandas as pd
 import scipy
 import scipy.optimize as optimize
 from scipy.special import erf
+from io import StringIO
 
 ## Import data
 
@@ -11,7 +12,7 @@ df_ideal_liq = pd.DataFrame(columns=['SiO2_Liq', 'TiO2_Liq', 'Al2O3_Liq',
 'FeOt_Liq', 'MnO_Liq', 'MgO_Liq', 'CaO_Liq', 'Na2O_Liq', 'K2O_Liq',
 'P2O5_Liq', 'H2O_Liq', 'Fe3Fet_Liq', 'Ni_Liq_ppm', 'Cu_Liq_ppm'])
 
-def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, suffix=None):
+def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, MELTS_txt=False, suffix=None):
     """ This function takes a user input, and reforms the columns into the format required by PySulfSat,
     In many cases this involves renaming columns to get into the format SiO2_Liq, TiO2_Liq, etc
 
@@ -24,7 +25,10 @@ def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, suffix=N
         True if output from Petrolog3 software, False (default) if not
 
     MELTS: bool
-        True if loading a MELTS tbl file
+        True if loading a MELTS tbl file, that is, a file that ends in .tbl
+
+    MELTS_txt: bool
+        True if loading a MELTS file that has tbl in its name, but is actually  a txt file.
 
 
 
@@ -103,6 +107,42 @@ def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, suffix=N
         df2['T_K']=df2['T (C)']+273.15
         df2['P_kbar']=df2['P (kbars)']
         my_input=df2
+
+    elif MELTS_txt is True:
+        from io import StringIO
+        with open(filename, 'r') as file:
+            lines = file.readlines()
+
+        # Find the index where the "Pressure" word is located
+        pressure_index = 0
+        for i, line in enumerate(lines):
+            if "Pressure" in line:
+                pressure_index = i
+                break
+
+        # Create a new list of lines starting from the "Pressure" line
+        filtered_lines = lines[pressure_index:]
+
+        # Create a Pandas DataFrame from the filtered lines
+        df = pd.read_csv(StringIO(''.join(filtered_lines)), delim_whitespace=True)
+
+        # Create a new DataFrame with the desired columns
+        df2 = df[['SiO2', 'TiO2', 'CaO', 'Al2O3', 'FeO', 'Fe2O3', 'Cr2O3', 'MnO', 'MgO', 'Na2O', 'K2O', 'P2O5', 'H2O']].copy()
+
+        # Rename the columns in the new DataFrame
+        df2.columns = ['SiO2_Liq', 'TiO2_Liq', 'CaO_Liq', 'Al2O3_Liq', 'FeO_Liq', 'Fe2O3_Liq', 'Cr2O3_Liq', 'MnO_Liq', 'MgO_Liq',  'Na2O_Liq', 'K2O_Liq', 'P2O5_Liq', 'H2O_Liq']
+
+
+        df2['FeOt_Liq']=df['FeO']+df['Fe2O3']*0.89998
+        df2['Fe3Fet_Liq']=1-(df2['FeO_Liq']/df2['FeOt_Liq'])
+        df2['T_K']=df['Temperature']+273.15
+        df2['P_kbar']=df['Pressure']/1000
+        my_input=df2
+
+
+
+
+
 
     elif 'xls' in filename:
         if sheet_name is not None:

@@ -2,6 +2,12 @@
 Change Log
 ================================================
 
+Version 1.0.3 (Sept 7th, 2023)
+================================
+Samer Mashhour pointed out different versions of MELTS give different files from the .tbl in the example, providing a
+file named _tbl.txt.
+To accomadate these, we have added an option for the import_data function to have MELTS_txt=True
+Thanks Samer!
 
 Version 1.0.1 (April 30th, 2023)
 ================================
