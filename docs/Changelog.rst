@@ -2,6 +2,10 @@
 Change Log
 ================================================
 
+Version 1.0.4 (Nov 11th, 2023)
+================================
+Updated calibration datasets to read from csvs to get around issues with pandas 2 pkl compatability
+
 Version 1.0.3 (Sept 7th, 2023)
 ================================
 Samer Mashhour pointed out different versions of MELTS give different files from the .tbl in the example, providing a

@@ -7,6 +7,7 @@ import warnings as w
 import numbers
 import pandas as pd
 from PySulfSat.core_calcs import *
+import os
 
 
 
@@ -47,54 +48,73 @@ def return_cali_dataset(model=None):
 
 
     """
+    subfolder_name='Cali_datasets_CSV'
+    sup_models = ['S2017_SCSS', 'LiZhang2022_SCSS', 'Liu2021_SCSS', 'B2021_SCSS', 'O2021_SCSS', 'F2015_SCSS',
+    'CD2019_SCAS', 'ZT2022_SCAS', 'MK_2015',
+    'O2022_CS6', 'BW2022_CS6']
+
+
+
+    # Check if the provided model is in the list of supported models
+    if model not in sup_models:
+        raise ValueError(f"Invalid model: {model}. Supported models with inbuilt calibration datasets are {', '.join(sup_models)}")
+
+
+
+
+
 
     #SCSS models
     if model=="S2017_SCSS":
-        with open(PySulfSat_dir/'Cali_Smythe17.pkl', 'rb') as f:
-            Cali_input=load(f)
+        csv_file_path = os.path.join(PySulfSat_dir, subfolder_name, 'Cali_Smythe17.csv')
+        Cali_input=pd.read_csv(csv_file_path)
+
+
 
     if model=="LiZhang2022_SCSS":
-        with open(PySulfSat_dir/'Cali_LiZhang22.pkl', 'rb') as f:
-            Cali_input=load(f)
+        csv_file_path = os.path.join(PySulfSat_dir, subfolder_name, 'Cali_LiZhang22.csv')
+        Cali_input=pd.read_csv(csv_file_path)
 
     if model=="Liu2021_SCSS":
-        with open(PySulfSat_dir/'Cali_Liu2021.pkl', 'rb') as f:
-            Cali_input=load(f)
+
+        csv_file_path = os.path.join(PySulfSat_dir, subfolder_name, 'Cali_Liu2021.csv')
+        Cali_input=pd.read_csv(csv_file_path)
 
     if model== "B2021_SCSS":
-        with open(PySulfSat_dir/'Cali_Blanchard2021.pkl', 'rb') as f:
-            Cali_input=load(f)
+        csv_file_path = os.path.join(PySulfSat_dir, subfolder_name, 'Cali_Blanchard2021.csv')
+        Cali_input=pd.read_csv(csv_file_path)
+
 
     if model=="O2021_SCSS":
-        print('waiting on a dataset from Hugh!')
+        raise TypeError('waiting on a dataset from Hugh!')
         # with open(PySulfSat_dir/'", 'rb') as f:
         #     Cali_input=load(f)
 
     if model=="F2015_SCSS":
-        with open(PySulfSat_dir/'Cali_Fortin2015.pkl', 'rb') as f:
-            Cali_input=load(f)
+        csv_file_path = os.path.join(PySulfSat_dir, subfolder_name, 'Cali_Fortin2015.csv')
+        Cali_input=pd.read_csv(csv_file_path)
 
     #SCAS models
     if model=="CD2019_SCAS":
-        with open(PySulfSat_dir/'Cali_ChowDas22.pkl', 'rb') as f:
-            Cali_input=load(f)
+        csv_file_path = os.path.join(PySulfSat_dir, subfolder_name, 'Cali_ChowDas22.csv')
+        Cali_input=pd.read_csv(csv_file_path)
 
     if model=="ZT2022_SCAS":
-        with open(PySulfSat_dir/'Cali_ZT2019.pkl', 'rb') as f:
-            Cali_input=load(f)
+        csv_file_path = os.path.join(PySulfSat_dir, subfolder_name, 'Cali_ZT2019.csv')
+        Cali_input=pd.read_csv(csv_file_path)
 
     if model=="MK_2015":
-        with open(PySulfSat_dir/'Cali_MK2015.pkl', 'rb') as f:
-            Cali_input=load(f)
+        csv_file_path = os.path.join(PySulfSat_dir, subfolder_name, 'Cali_MK2015.csv')
+        Cali_input=pd.read_csv(csv_file_path)
 
     #CS6
 
     if model=="O2022_CS6":
-        with open(PySulfSat_dir/'Cali_OM2022.pkl', 'rb') as f:
-            Cali_input=load(f)
+        csv_file_path = os.path.join(PySulfSat_dir, subfolder_name, 'Cali_OM2022.csv')
+        Cali_input=pd.read_csv(csv_file_path)
 
     if model=="BW2022_CS6":
-        with open(PySulfSat_dir/'Cali_BW2022.pkl', 'rb') as f:
-            Cali_input=load(f)
+        csv_file_path = os.path.join(PySulfSat_dir, subfolder_name, 'Cali_BW2022.csv')
+        Cali_input=pd.read_csv(csv_file_path)
 
     return Cali_input
