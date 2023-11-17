@@ -8,7 +8,7 @@ https://PySulfsat.readthedocs.io/en/latest/index.html
 
 
 
-A preprint of a paper is available here: 10.31223/X5K360
+The paper is here: https://doi.org/10.30909/vol.06.01.107127
 
 If you have any issues with PySulfSat please raise an 'issue'. If you can attach your jupyter notebook and any associated files (spreadsheets), that makes it way easier to diagnose it. You can als
 email these to penny_wieser@berkeley.edu
@@ -24,6 +24,6 @@ For example, people should write 'degassing was calculated in PyDegass (Smith et
 
  PySulfSat took >6 months to write, under the current academic credit system, if you simply repackage it with a few new features, I gain no traditional credit (citations)!
 
- Happy sulfur modelling
+ Happy sulfur modelling!
 
 
