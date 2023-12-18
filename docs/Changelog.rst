@@ -1,6 +1,9 @@
 ================================================
 Change Log
 ================================================
+Documentation update only (Dec 18th, 2023)
+================================
+PyMELTScalc renamed to PetThermoTools - updated examples.
 
 Version 1.0.4 (Nov 11th, 2023)
 ================================

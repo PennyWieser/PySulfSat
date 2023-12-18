@@ -45,10 +45,10 @@ Welcome to PySulfSat's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Integrating with PyMELTS
+   :caption: Integrating with PetThermoTools
 
-   Examples/Integrating_with_PyMELTS/Single_FC_Model
-   Examples/Integrating_with_PyMELTS/Polybaric_FC_Model
+   Examples/Integrating_with_PetThermoTools/Single_FC_Model
+   Examples/Integrating_with_PetThermoTools/Polybaric_FC_Model
 
 
 
