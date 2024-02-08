@@ -28,6 +28,29 @@ def norm_liqs_excl_H2O(Liqs):
     return Liqs_norm
 
 
+def ensure_series(a, b):
+    # Determine the target length
+    lengths = [len(a) if isinstance(a, (pd.Series, np.ndarray)) else None,
+               len(b) if isinstance(b, (pd.Series, np.ndarray)) else None]
+    lengths = [l for l in lengths if l is not None]
+    target_length = max(lengths) if lengths else 1
+
+    # Convert each input to a Series of the target length
+    if not isinstance(a, (pd.Series, np.ndarray)):
+        a = pd.Series([a] * target_length)
+    else:
+        a = pd.Series(a)
+
+    if not isinstance(b, (pd.Series, np.ndarray)):
+        b = pd.Series([b] * target_length)
+    else:
+        b = pd.Series(b)
+
+
+    return a, b
+
+
+
 
 def calculate_LiZhang2022_SCSS(*, df, T_K, P_kbar, H2O_Liq=None, Fe_FeNiCu_Sulf=None, Cu_FeNiCu_Sulf=None, Ni_FeNiCu_Sulf=None, Fe3Fet_Liq=None, logfo2=None,
 Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5, Fe_Sulf=None, Cu_Sulf=None, Ni_Sulf=None, T_K_transition=True,
@@ -109,13 +132,14 @@ highT=False, lowT=False):
     Returns
     -------
     pandas.DataFrame:
-        Contains column for SCSS ideal, and user inputted dataframe
+        Contains column for SCSS
 
     '''
 
 
 
     T_K2=T_K-0.15 # As they use 273, not 273.15 for their conversion
+
 
     Liqs=df.copy()
 
@@ -136,6 +160,9 @@ highT=False, lowT=False):
 
     moles=calculate_anhydrous_mol_proportions_liquid(liq_comps=Liqs_norm)
     mol_frac=calculate_anhydrous_mol_fractions_liquid(liq_comps=Liqs_norm)
+
+
+    T_K2, b=ensure_series(T_K2, mol_frac['FeOt_Liq_mol_frac'])
 
     # Cation calculations
 
@@ -215,7 +242,7 @@ highT=False, lowT=False):
 
 
     NaKAl=mol_cat_norm['Na_cat']+mol_cat_norm['K_cat']-mol_cat_norm['Al_cat']
-    DeltaGRT=(137778-91.666*(T_K2)+8.474*(T_K2)*np.log(T_K2))/8.314/(T_K2)
+    DeltaGRT=(137778-91.666*(T_K2.astype(float))+8.474*(T_K2.astype(float))*np.log(T_K2.astype(float)))/8.314/(T_K2.astype(float))
 
     SumXMAM=(1673/(T_K2)*(6.7*(mol_cat_norm['Na_cat']+mol_cat_norm['K_cat'])
     +1.8*(mol_cat_norm['Al_cat']+mol_cat_norm['Fe3_cat'])+4.9*mol_cat_norm['Mg_cat']

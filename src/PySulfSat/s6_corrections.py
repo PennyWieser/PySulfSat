@@ -125,7 +125,7 @@ def calculate_S6St_Nash2019(T_K, Fe3Fet_Liq):
     # First, calculate Fe3/Fe2 from Fe3/Fet
     Fe3Fe2=Fe3Fet_Liq/(1-Fe3Fet_Liq)
     #print(Fe3Fe2)
-    if isinstance(Fe3Fe2, float) or isinstance(Fe3Fe2, int): 
+    if isinstance(Fe3Fe2, float) or isinstance(Fe3Fe2, int):
         log_Fe3Fe2=np.log10(Fe3Fe2)
 
     else:
@@ -209,6 +209,12 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
     SCAS: int, float, pandas.Series
         SCAS (6+) you have calculated from whatever model you want.
 
+    Choose either
+    S6St_Liq: int, float, str
+        S6/ST in the liquid
+
+    Or if you dont know this, specify a model to calculate it.
+
     model: str
         Model used to calculate S6St_Liq, choice of:
         'Nash': Uses Nash et al. (2019) based on Fe3Fet_Liq and T_K
@@ -233,6 +239,8 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
 
 
     """
+    if S6St_Liq is not None and model is not None:
+        raise TypeError('Please specify either S6St_Liq or a model to calculate this parameter, not both')
 
     if model =="Kleinsasser":
         SCSS_Tot=calculate_S_Tot_Kleinsasser2022_dacite(SCSS2=SCSS,

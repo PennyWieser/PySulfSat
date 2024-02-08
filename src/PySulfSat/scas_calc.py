@@ -104,7 +104,10 @@ def calculate_CD2019_SCAS(*, df, T_K, H2O_Liq=None, Fe3Fet_Liq=None, P_kbar=None
     return out
 
 def calculate_ZT2022_SCAS(*, df, T_K, H2O_Liq=None, Fe3Fet_Liq=None, P_kbar=None):
-    """" Calculates SCAS using the model of Zajacz and Tsay, 2022
+    raise TypeError('Ooops, in a prevoius version we had called this ZT2022, but this is actually 2019 paper, please use the function calculate_ZT2019_SCAS ')
+
+def calculate_ZT2019_SCAS(*, df, T_K, H2O_Liq=None, Fe3Fet_Liq=None, P_kbar=None):
+    """" Calculates SCAS using the model of Zajacz and Tsay, 2019
 
     Parameters
     -------
