@@ -86,7 +86,7 @@ def Lee_Wieser_sulfide_melting(*,  M_Max=0.01, Modes, KDs,
     if isinstance(S_Melt_SCSS_2_ppm, float) or isinstance(S_Melt_SCSS_2_ppm, int):
         S_Melt_SCSS_2_ppm=np.repeat(S_Melt_SCSS_2_ppm, len(M))
 
-    S_Melt = S_Melt_SCSS_2_ppm/(1+Prop_S6)
+    S_Melt = S_Melt_SCSS_2_ppm/(1-Prop_S6) # Was wrong in previous version.
 
     # Setting up variables to be filled in loop
     #These ones have only 1 dimension for different M steps, as they do not vary with different mantle S contents
