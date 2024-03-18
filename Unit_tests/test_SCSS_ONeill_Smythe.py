@@ -184,7 +184,7 @@ Fe3Fet_Liq=Liq_test['Fe3Fet_Liq'])['SCAS6_ppm'][0], 7043.40006526207,
 decimalPlace, "SCAS calculated from CD2019 not equal to test value")
 
     def test_ZT2022(self):
-        self.assertAlmostEqual(ss.calculate_ZT2022_SCAS(df=Liq_test,
+        self.assertAlmostEqual(ss.calculate_ZT2019_SCAS(df=Liq_test,
 T_K=Liq_test['T_K'], P_kbar=Liq_test['P_kbar'],
 Fe3Fet_Liq=Liq_test['Fe3Fet_Liq'])['SCAS6_ppm'][0], 7025.572329292286,
 decimalPlace, "SCAS calculated from ZT2022 not equal to test value")
