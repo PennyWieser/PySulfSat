@@ -130,13 +130,13 @@ def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, MELTS_tx
         if sum(df.columns.str.contains('Ni_Liq'))>0:
             df['Ni_Liq_ppm']=df['Ni_Liq']
         else:
-            df['Ni_Liq_ppm']=df['Ni_Liq']
+            df['Ni_Liq_ppm']=0
             print('We didnt find a Ni column in your Petrolog input')
 
         if sum(df.columns.str.contains('Cu_Liq'))>0:
             df['Cu_Liq_ppm']=df['Cu_Liq']
         else:
-            df['Cu_Liq_ppm']=df['Cu_Liq']
+            df['Cu_Liq_ppm']=0
             print('We didnt find a Ni column in your Petrolog input')
 
         df['FeOt_Liq']=df['FeO_Liq']+df['Fe2O3_Liq']*0.89998
@@ -144,7 +144,9 @@ def import_data(filename, sheet_name=None, Petrolog=False, MELTS=False, MELTS_tx
         df2=df.drop(['FeO_Liq', 'Fe2O3_Liq'], axis=1)
         df2['T_K']=df2['Temperature']+273.15
         df2['P_kbar']=df2['Pressure(kbar)']
-        df2['Fraction_melt']=df2['Melt_%_magma']/100
+
+        if 'Melt_%_magma' in df2.columns:
+            df2['Fraction_melt'] = df2['Melt_%_magma'] / 100
         my_input=df2
 
 

@@ -1381,8 +1381,8 @@ def calculate_Symthe_sulf_minimisation(FeOt_Liq, Fe3Fet_Liq, T_K, Ni_Liq, Cu_Liq
         from the sulfide composition and the Kd.
     '''
 
-    Ni_Sulf=np.empty(len(FeOt_Liq), dtype=float)
-    Cu_Sulf=np.empty(len(FeOt_Liq), dtype=float)
+    Ni_Sulf=np.zeros(len(FeOt_Liq), dtype=float)
+    Cu_Sulf=np.zeros(len(FeOt_Liq), dtype=float)
 
 
     bnds=((0, 30), (0, 30))
