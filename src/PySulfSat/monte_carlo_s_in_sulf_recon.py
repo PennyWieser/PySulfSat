@@ -26,7 +26,7 @@ error_melt_dens=0, error_type_melt_dens='Abs', error_dist_melt_dens='normal', le
         S in sulifde in wt%
 
     Vol: int, float, pd.series
-        Volume proportion of sulfide in melt inclusion
+        Volume percent of sulfide in melt inclusion
 
     sulf_dens: int, float, pd.series
         Density of the sulfide in kg/m3

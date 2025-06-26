@@ -117,20 +117,25 @@ def add_noise_series(var, error_var,  error_type="Abs", error_dist="normal", N_d
     for i in range(0, len_loop):
 
         # If user has entered a pandas series for error, takes right one for each loop
-        if type(error_var) is pd.Series:
-            error_var=error_var.iloc[i]
+        if isinstance(error_var, pd.Series):
+            this_error = error_var.iloc[i]
         else:
-            error_var=error_var
+            this_error = error_var
 
-        if type(var) is pd.Series:
-            var_i=var.iloc[i]
+        if isinstance(var, pd.Series):
+            var_i = var.iloc[i]
         else:
-            var_i=var
+            var_i = var
 
 
-        Error_MC=add_noise_1var(var=var_i,
-        sample_i=i, error_var=error_var, N_dup=N_dup,
-        error_dist=error_dist, error_type=error_type)
+        Error_MC = add_noise_1var(
+            var=var_i,
+            sample_i=0,
+            error_var=this_error,
+            N_dup=N_dup,
+            error_dist=error_dist,
+            error_type=error_type
+        )
 
 
 

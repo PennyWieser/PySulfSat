@@ -89,8 +89,16 @@ def calculate_mass_frac_sulf(S_model=None, S_init=None, F_melt=None, S_sulf=None
     X_sulf=(S_init-F_melt*S_model)/S_sulf
     return X_sulf
 
+def calculate_total_fractionation(lna_S2_SO4_1000, lna_sulf_S2_1000, S6ST):
+    lna_sulf_silicate=S6ST*lna_S2_SO4_1000 + lna_sulf_S2_1000
 
-def calculate_S_isotope_factors(*, T_K, S6St_Liq=None):
+    a_sulf_sil=np.exp(lna_sulf_silicate / 1000)
+
+
+    return a_sulf_sil
+
+
+def calculate_S_isotope_factors(*, T_K, S6ST=0):
     """ Calculates S fractionation factor as a function of temperature. If S6St_Liq is entered,
     the fractionaton factor for S2 and SO4 are combined to give one for the overall melt.
 
@@ -104,7 +112,7 @@ def calculate_S_isotope_factors(*, T_K, S6St_Liq=None):
     -------------------
     T_K: int, float, pd.Series, np.array
         Temperature in Kelvin
-    S6st_Liq: optional, int, float, pd.Series, np.array
+    S6St: optional, int, float, pd.Series, np.array
         S6/St ratio in liquid, used to calculate a total FeS-S in melt fractionation factor.
 
     Returns
@@ -113,98 +121,188 @@ def calculate_S_isotope_factors(*, T_K, S6St_Liq=None):
     '..._OR79': fractionation factor from Ohmoto and Rye 1979
     '..._M84' Fractionaton factor from Miyoshi et al. (1984)
     '..._F15' Fracionation factor from Fiege et al. (2015)
-    if S6ST_Liq is not None:
-    'a_FeS_ST_F15_M84' Sulfide melt fractionatoin factor using a_FeS_S2_F15 and a_FeS_SO4_M84 (Fiege doesnt have SO4-FeS)
-    'a_FeS_ST_M84' Sulfide melt fractionatoin factor using a_FeS_S2_M84 and a_FeS_SO4_M84
+
 
 
 
 
     """
-    # if (isinstance(S6St_Liq, float) or instance(S6St_Liq, int)) and (isinstance(T_K, float) or isinstance(T_K, int)):
-    #     type='all floats/integers'
-    # elif (isinstance(S6St_Liq, float) or instance(S6St_Liq, int)) and  ~(isinstance(T_K, float) or isinstance(T_K, int)):
-    #     # T isnt a float or integer, but S is, so need to scale up S6St to be the same length
-    #
-    #
-    if isinstance(T_K, (int, float)) and isinstance(S6St_Liq, (pd.Series, np.ndarray)):
+
+    if isinstance(T_K, (int, float)) and isinstance(S6ST, (pd.Series, np.ndarray)):
         #print('replacing T with series')
-        T_K = pd.Series(np.full(S6St_Liq.shape, T_K))
-    elif isinstance(S6St_Liq, (int, float)) and isinstance(T_K, (pd.Series, np.ndarray)):
+        T_K = pd.Series(np.full(S6ST.shape, T_K))
+    elif isinstance(S6ST, (int, float)) and isinstance(T_K, (pd.Series, np.ndarray)):
         #print('replacing S6 with pd.Series')
-        S6St_Liq = pd.Series(np.full(T_K.shape, S6St_Liq))
+        S6St = pd.Series(np.full(T_K.shape, S6ST))
 
 
     T=T_K
     T_C=T_K-273.15
 
-    lna_FeS_H2S_1000=0.1*(1000/T)**3 # From Ohmoto and Rye 1979
-    lna_S2_SO4_1000_M=-7.4*(1000/T)**2+0.19 # from Miyoshi 1984
-    lna_H2S_SO4_1000_M=-6.5*(1000/T)**2+0.19 # from Miyoshi 1984
-    lna_H2S_S2_1000_M=lna_H2S_SO4_1000_M-lna_S2_SO4_1000_M
-    lna_FeS_S2_1000_M=lna_FeS_H2S_1000+lna_H2S_S2_1000_M
-    lna_FeS_SO4_1000_M=lna_FeS_H2S_1000+lna_H2S_SO4_1000_M
+    # ----------- Sulfide - H2S fractionation factors
+    lna_FeS_H2S_1000_OR79=0.1*(1000/T)**2 # Original Ohmoto and Rye (1979) expression, taken from Marini et al. (2011) as cant find original paper.
 
-    # From Fiege
-    #lna_H2S_SO4_1000_F=-6.5*(1000/T)**2+0.19# Fiege doesnt have this term - its from Miyoshi
+    lna_FeS_H2S_1000_LL06=0.25*(1000/T)**2 # From Liu and Li (2006), update based on their models
 
-    lna_H2S_S2_1000_F=10.84*(1000/T)**2-2.5 # From Fiege
-    lna_S2_SO4_1000_F=lna_H2S_SO4_1000_M-lna_H2S_S2_1000_F # from Fiege
+    lna_FeCuS2_H2S_1000_LL06=0.05*(1000/T)**2 # From Liu and Li (2006) based on chalcopyrite
 
-    lna_FeS_S2_1000_F=lna_FeS_H2S_1000+lna_H2S_S2_1000_F
-    #lna_FeS_SO4_1000_F=lna_FeS_H2S_1000+lna_H2S_SO4_1000_M
+    lna_Cu5FeS4_H2S_1000_LL06=-0.07*(1000/T)**2 # From Liu and Li (2006) based on bornite
 
-    if isinstance(T_K, int) or isinstance(T_K, float):
+    lna_CuFe2S3_H2S_1000_LL06=0.04*(1000/T)**2 # From Liu and Li (2006) based on cubanite
 
-        df=pd.DataFrame(data={'T_K': T_K,
-                              'T_C': T_C,
-                              'lna_FeS_H2S_1000_OR79': lna_FeS_H2S_1000,
-                              'lna_S2_SO4_1000_M84':  lna_S2_SO4_1000_M,
-                              'lna_H2S_SO4_1000_M84': lna_H2S_SO4_1000_M,
-                              'lna_H2S_S2_1000_M84': lna_H2S_S2_1000_M,
-                              'lna_FeS_S2_1000_M84': lna_FeS_S2_1000_M,
-                              'lna_FeS_SO4_1000_M84': lna_FeS_SO4_1000_M,
+    lna_FeNi2S4_H2S_1000_LL06=-0.27*(1000/T)**2 # From Liu and Li (2006) based on cubanite
 
-                              'lna_H2S_S2_1000_F15': lna_H2S_S2_1000_F,
-                              'lna_S2_SO4_1000_F15': lna_S2_SO4_1000_F,
-                              'lna_FeS_S2_1000_F15': lna_FeS_S2_1000_F,
-                              }, index=[0])
+    #------------------Now lets get the H2S - S2 fractionation factor from Fiege et al (2015)----------------------
+
+    lna_H2S_S2_1000_F15=10.84*(1000/T)**2-2.5 # From Fiege et al. 2015, page 52, Eq 8
+
+
+
+    # This allows us to calculate sulfide-S2 fractionation factors using all of the equations above.
+
+    lna_FeS_S2_1000_OR79_F15=lna_FeS_H2S_1000_OR79+lna_H2S_S2_1000_F15  # using ohmoto and Rye
+
+    lna_FeS_S2_1000_LL06_F15=lna_FeS_H2S_1000_LL06+lna_H2S_S2_1000_F15  # using new Liu and Li
+
+    lna_FeCuS2_S2_1000_LL06_F15=lna_FeCuS2_H2S_1000_LL06+lna_H2S_S2_1000_F15  # using new Liu and Li
+
+    lna_Cu5FeS4_S2_1000_LL06_F15=lna_Cu5FeS4_H2S_1000_LL06+lna_H2S_S2_1000_F15  # using new Liu and Li
+
+    lna_CuFe2S3_S2_1000_LL06_F15=lna_CuFe2S3_H2S_1000_LL06+lna_H2S_S2_1000_F15  # using new Liu and Li
+
+    lna_FeNi2S4_S2_1000_LL06_F15=lna_FeNi2S4_H2S_1000_LL06+lna_H2S_S2_1000_F15  # using new Liu and Li
+
+    # Alternative approach uses Miyoshi's two expressions to get the S2-H2S fractionation factor.
+
+    lna_S2_SO4_1000_M84=-7.4 * 10**6/(T**2)+0.19 # this is from the Miyoshi 1984 paper  - inverted
+    lna_H2S_SO4_1000_M84=-6.5*10**6/T**2 # This is from Miyoshi 1984 directly, inverted to get other way up with a minus sign.
+    lna_H2S_S2_1000_M84=lna_H2S_SO4_1000_M84-lna_S2_SO4_1000_M84
+
+    # Using some of Fiege, some of Miyoshi - but the big difference is the H2S-S2 term from Fiege.
+    lna_S2_SO4_1000_M84_F15=lna_H2S_SO4_1000_M84-lna_H2S_S2_1000_F15
+
+
+
+    lna_FeS_S2_1000_OR79_M84=lna_FeS_H2S_1000_OR79+lna_H2S_S2_1000_M84  # using ohmoto and Rye
+
+    lna_FeS_S2_1000_LL06_M84=lna_FeS_H2S_1000_LL06+lna_H2S_S2_1000_M84  # using new Liu and Li
+
+    lna_FeCuS2_S2_1000_LL06_M84=lna_FeCuS2_H2S_1000_LL06+lna_H2S_S2_1000_M84  # using new Liu and Li
+
+    lna_Cu5FeS4_S2_1000_LL06_M84=lna_Cu5FeS4_H2S_1000_LL06+lna_H2S_S2_1000_M84  # using new Liu and Li
+
+    lna_CuFe2S3_S2_1000_LL06_M84=lna_CuFe2S3_H2S_1000_LL06+lna_H2S_S2_1000_M84  # using new Liu and Li
+
+    lna_FeNi2S4_S2_1000_LL06_M84=lna_FeNi2S4_H2S_1000_LL06+lna_H2S_S2_1000_M84  # using new Liu and Li
+
+    # An alternative way still would use the Ohmoto and Lsaga (1982) SO4-H2S approach
+
+
+
+
+    var_names = [
+        'T_K', 'T_C','S6ST',
+        'lna_FeS_H2S_1000_OR79', 'lna_FeS_H2S_1000_LL06',
+        'lna_FeCuS2_H2S_1000_LL06', 'lna_Cu5FeS4_H2S_1000_LL06',
+        'lna_CuFe2S3_H2S_1000_LL06', 'lna_FeNi2S4_H2S_1000_LL06',
+        'lna_H2S_S2_1000_F15',
+
+        'lna_FeS_S2_1000_OR79_F15', 'lna_FeS_S2_1000_LL06_F15',
+        'lna_FeCuS2_S2_1000_LL06_F15', 'lna_Cu5FeS4_S2_1000_LL06_F15',
+        'lna_CuFe2S3_S2_1000_LL06_F15', 'lna_FeNi2S4_S2_1000_LL06_F15',
+
+
+        'lna_H2S_S2_1000_M84', 'lna_H2S_SO4_1000_M84', 'lna_S2_SO4_1000_M84','lna_S2_SO4_1000_M84_F15',
+
+
+        'lna_FeS_S2_1000_OR79_M84', 'lna_FeS_S2_1000_LL06_M84',
+        'lna_FeCuS2_S2_1000_LL06_M84', 'lna_Cu5FeS4_S2_1000_LL06_M84',
+        'lna_CuFe2S3_S2_1000_LL06_M84', 'lna_FeNi2S4_S2_1000_LL06_M84'
+    ]
+
+    # Build the dictionary using locals()
+    local_vars = locals()
+    missing = [var for var in var_names if var not in local_vars]
+    if missing:
+        raise KeyError(f"The following variables were not defined: {missing}")
+    data_dict = {var: local_vars[var] for var in var_names}
+
+
+    # If T_K is scalar, wrap in a DataFrame with index=0
+    if isinstance(T_K, (int, float)):
+        df = pd.DataFrame(data_dict, index=[0])
     else:
-            df=pd.DataFrame(data={'T_K': T_K,
-                              'T_C': T_C,
-                              'lna_FeS_H2S_1000_OR79': lna_FeS_H2S_1000,
-                              'lna_S2_SO4_1000_M84':  lna_S2_SO4_1000_M,
-                              'lna_H2S_SO4_1000_M84': lna_H2S_SO4_1000_M,
-                              'lna_H2S_S2_1000_M84': lna_H2S_S2_1000_M,
-                              'lna_FeS_S2_1000_M84': lna_FeS_S2_1000_M,
-                              'lna_FeS_SO4_1000_M84': lna_FeS_SO4_1000_M,
+        # For array-style T_K, assume all variables are vectors of the same length
+        df = pd.DataFrame(data_dict)
 
-                              'lna_H2S_S2_1000_F15': lna_H2S_S2_1000_F,
-                              'lna_S2_SO4_1000_F15': lna_S2_SO4_1000_F,
-                              'lna_FeS_S2_1000_F15': lna_FeS_S2_1000_F,
-                              })
+    # Now lets get them all into true fractionation factors.
 
-    df['a_FeS_S2_F15']=np.exp(df['lna_FeS_S2_1000_F15']/1000)
-    #df['a_FeS_SO4_F']=np.exp(df['lna_FeS_SO4_1000_F']/1000)
-    df['a_FeS_S2_M84']=np.exp(df['lna_FeS_S2_1000_M84']/1000)
-    df['a_FeS_SO4_M84']=np.exp(df['lna_FeS_SO4_1000_M84']/1000)
-    df['a_S2_SO4_M84']=np.exp(df['lna_S2_SO4_1000_M84']/1000)
-    df['a_S2_SO4_F15']=np.exp(df['lna_S2_SO4_1000_F15']/1000)
-    df['a_FeS_H2S_OR79']=np.exp(df['lna_FeS_H2S_1000_OR79']/1000)
-    df['a_H2S_S2_M84']=np.exp(df['lna_H2S_S2_1000_M84']/1000)
-    df['a_H2S_S2_F15']=np.exp(df['lna_H2S_S2_1000_F15']/1000)
-    df['a_H2S_SO4_M84']=np.exp(df['lna_H2S_SO4_1000_M84']/1000)
+    for col in df.columns:
+        if col.startswith('lna_'):
+            new_col = 'a_' + col[4:]  # Remove 'lna_' prefix, add 'a_'
+            df[new_col] = np.exp(df[col] / 1000)
+
+    # Now lets calculate the sulfide-total fractionation
+
+    #---------------------------------------------------All ones using Fiege for the H2S-S2 equation-------------------------------------
+    # This uses Miyoshi alone for S2_SO4, and then the OR79 and F15 for sulf-sulfide
+    df['a_FeS_melt_M84_OR79_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_FeS_S2_1000_OR79_F15, S6ST)
+
+    # Miyoshi for S2_S04, LL06 and F15 for sulf-sulfide
+    df['a_FeS_melt_M84_LL06_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_FeS_S2_1000_LL06_F15, S6ST)
+
+    # All the other sulfide compositions from Li and Liu
+    df['a_FeCuS2_melt_M84_LL06_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_FeCuS2_S2_1000_LL06_F15, S6ST)
+    df['a_FeCuS2_melt_M84_LL06_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_FeCuS2_S2_1000_LL06_F15, S6ST)
+    df['a_Cu5FeS4_melt_M84_LL06_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_Cu5FeS4_S2_1000_LL06_F15, S6ST)
+    df['a_CuFe2S3_melt_M84_LL06_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_CuFe2S3_S2_1000_LL06_F15, S6ST)
+    df['a_FeNi2S4_melt_M84_LL06_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_FeNi2S4_S2_1000_LL06_F15, S6ST)
+
+    #--------------------------All ones using Miyoshi for the H2S-S2 equation-------------------------------------
+
+    df['a_FeS_melt_M84_F15_OR79_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_FeS_S2_1000_OR79_F15, S6ST)
+
+    # Miyoshi for S2_S04, LL06 and F15 for sulf-sulfide
+    df['a_FeS_melt_M84_F15_LL06_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_FeS_S2_1000_LL06_F15, S6ST)
 
 
-    if S6St_Liq is not None:
-        Sprop=S6St_Liq
-        if len(df)==1:
-            df['a_FeS_ST_F15_M84']=Sprop*df['a_FeS_SO4_M84'].iloc[0]+ (1-Sprop)*df['a_FeS_S2_F15'].iloc[0]
-            df['a_FeS_ST_M84']=Sprop*df['a_FeS_SO4_M84'].iloc[0]+ (1-Sprop)*df['a_FeS_S2_M84'].iloc[0]
+    df['a_FeCuS2_melt_M84_F15_LL06_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_FeCuS2_S2_1000_LL06_F15, S6ST)
+    df['a_FeCuS2_melt_M84_F15_LL06_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_FeCuS2_S2_1000_LL06_F15, S6ST)
+    df['a_Cu5FeS4_melt_M84_F15_LL06_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_Cu5FeS4_S2_1000_LL06_F15, S6ST)
+    df['a_CuFe2S3_melt_M84_F15_LL06_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_CuFe2S3_S2_1000_LL06_F15, S6ST)
+    df['a_FeNi2S4_melt_M84_F15_LL06_F15'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_FeNi2S4_S2_1000_LL06_F15, S6ST)
 
-        else:
-            df['a_FeS_ST_F15_M84']=Sprop*df['a_FeS_SO4_M84']+ (1-Sprop)*df['a_FeS_S2_F15']
-            df['a_FeS_ST_M84']=Sprop*df['a_FeS_SO4_M84']+ (1-Sprop)*df['a_FeS_S2_M84']
+
+
+
+    df['a_FeS_melt_M84_OR79_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_FeS_S2_1000_OR79_M84, S6ST)
+
+    # Miyoshi for S2_S04, LL06 and F15 for sulf-sulfide
+    df['a_FeS_melt_M84_LL06_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_FeS_S2_1000_LL06_M84, S6ST)
+
+    # All the other sulfide compositions from Li and Liu
+    df['a_FeCuS2_melt_M84_LL06_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_FeCuS2_S2_1000_LL06_M84, S6ST)
+    df['a_FeCuS2_melt_M84_LL06_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_FeCuS2_S2_1000_LL06_M84, S6ST)
+    df['a_Cu5FeS4_melt_M84_LL06_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_Cu5FeS4_S2_1000_LL06_M84, S6ST)
+    df['a_CuFe2S3_melt_M84_LL06_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_CuFe2S3_S2_1000_LL06_M84, S6ST)
+    df['a_FeNi2S4_melt_M84_LL06_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84, lna_FeNi2S4_S2_1000_LL06_M84, S6ST)
+
+    # --------------- All ones using combination of Miyoshi and Fiege for the S2-SO4 term
+
+    df['a_FeS_melt_M84_F15_OR79_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_FeS_S2_1000_OR79_M84, S6ST)
+
+    # Miyoshi for S2_S04, LL06 and F15 for sulf-sulfide
+    df['a_FeS_melt_M84_F15_LL06_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_FeS_S2_1000_LL06_M84, S6ST)
+
+    # All the other sulfide compositions from Li and Liu
+    df['a_FeCuS2_melt_M84_F15_LL06_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_FeCuS2_S2_1000_LL06_M84, S6ST)
+    df['a_FeCuS2_melt_M84_F15_LL06_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_FeCuS2_S2_1000_LL06_M84, S6ST)
+    df['a_Cu5FeS4_melt_M84_F15_LL06_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_Cu5FeS4_S2_1000_LL06_M84, S6ST)
+    df['a_CuFe2S3_melt_M84_F15_LL06_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_CuFe2S3_S2_1000_LL06_M84, S6ST)
+    df['a_FeNi2S4_melt_M84_F15_LL06_M84'] = calculate_total_fractionation(lna_S2_SO4_1000_M84_F15, lna_FeNi2S4_S2_1000_LL06_M84, S6ST)
+
+
+
 
 
     return df
