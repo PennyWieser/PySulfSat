@@ -289,6 +289,22 @@ highT=False, lowT=False):
     lnS=DeltaGRT+lnCs+lnXFeO+LnrFeO+lnaFeS+C1PC2erf
 
     S2_calc=np.exp(lnS)
+    print("S2_calc index type:", type(S2_calc))
+    print("S2_calc index:", getattr(S2_calc, "index", "no index (likely ndarray)"))
+
+    print("Liqs index type:", type(Liqs.index))
+    print("Liqs index:", Liqs.index)
+
+    # If both have indices, show mismatches
+    if hasattr(S2_calc, "index"):
+        missing_in_S2 = Liqs.index.difference(S2_calc.index)
+        missing_in_Liqs = S2_calc.index.difference(Liqs.index)
+
+        print("\nIn Liqs but not in S2_calc:", missing_in_S2)
+        print("In S2_calc but not in Liqs:", missing_in_Liqs)
+    else:
+        print("\nS2_calc has no index (probably a NumPy array).")
+
     S2_calc[(Liqs['FeOt_Liq']<5)&(Liqs['H2O_Liq']>0)]=0
 
     SumMoles_H2O=(moles['FeOt_Liq_mol_prop']+moles['MnO_Liq_mol_prop']+moles['MgO_Liq_mol_prop']
@@ -906,6 +922,9 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
 
     liqs=calculate_anhydrous_cat_fractions_liquid(liq_comps=df_c)
 
+    liqs.drop(columns=["Fe_FeNiCu_Sulf_calc"], inplace=True)
+    df_c2 = pd.concat([df_c2, liqs], axis=1)
+
     liqs['Fe2_Liq_cat_frac']=liqs['Fet_Liq_cat_frac']*(1-Fe3Fet_Liq)
 
 
@@ -932,6 +951,8 @@ Ni_Liq=None, Cu_Liq=None, Ni_Sulf_init=5, Cu_Sulf_init=5):
     df_c2['LnS']=(df_c2['LnCS2_calc']+df_c2['DeltaG']+df_c2['Ln_a_FeS']-df_c2['Ln_a_FeO'])
 
     df_c2['SCSS2_ppm']=np.exp(df_c2['LnS'])
+
+    df_c2 = df_c2.loc[:, ~df_c2.columns.duplicated()]
 
     cols_to_move = ['SCSS2_ppm', 'LnS', "Ln_a_FeO",
                     'Ln_a_FeS', 'DeltaG', 'LnCS2_calc']
@@ -1601,6 +1622,8 @@ Ni_Sulf_init=5, Cu_Sulf_init=5):
 
     if isinstance(T_K, pd.Series):
         T_K=T_K.astype(float)
+
+
 
     Smythe_calcs['log_SCSS_ideal']=(
 (122175-80.28*T_K+8.474*T_K*np.log(T_K))/(8.314*T_K)+9.087+(Smythe_calcs['Si_XA_ideal']+Smythe_calcs['Ti_XA_ideal']
