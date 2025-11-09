@@ -14,7 +14,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 
 setup(
-    name="PySulfSat",
+    name="pysulfsat",
     version=__version__,
     author="Penny Wieser",
     author_email="penny.wieser@gmail.com",
@@ -43,5 +43,5 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.8',
+    python_requires='>=3.9',
 )
