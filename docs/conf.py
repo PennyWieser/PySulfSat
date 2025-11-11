@@ -27,7 +27,7 @@ author = 'Penny Wieser'
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = 'v.0'
+release = '0'
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -71,10 +71,8 @@ bibtex_reference_style = 'author_year'
 # `env.config.html_context['var']`.
 nbsphinx_prolog = r"""
 {% set docname = 'docs' / env.doc2path(env.docname, base=None) %}
-{% set git_ref = 'main' if not env.config.html_context['READTHEDOCS'] else
-                 env.config.html_context['github_version']
-                 if '.' not in env.config.html_context['current_version'] else
-                 'v' + env.config.release %}
+{% set git_ref = 'main' %}
+
 .. raw:: html
 
     <div class="admonition note">
