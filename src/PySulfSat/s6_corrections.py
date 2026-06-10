@@ -262,8 +262,10 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
 
 
     else:
+        if S6St_Liq is not None:
+            S6St_Liq=S6St_Liq
 
-        if model=='OM2022' or model =='BW2023' or 'GW2026' in model:
+        elif model=='OM2022' or model =='BW2023' or 'GW2026' in model:
             if T_K is None:
                 raise TypeError('You need to specify a temp')
             if df is None:
@@ -317,18 +319,17 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
 
 
 
-        if model =="Jugo":
+        elif model =="Jugo":
             S6St_Liq=calculate_S6St_Jugo2010_eq10(deltaQFM=deltaQFM)
 
-        if model =="Nash":
+        elif model =="Nash":
             if T_K is None:
                 raise Exception('Need a T_K input to use Nash')
             if Fe3Fet_Liq is None:
                 raise Exception('Need a Fe3Fet_Liq input to use Nash')
             S6St_Liq=calculate_S6St_Nash2019(T_K=T_K, Fe3Fet_Liq=Fe3Fet_Liq)
 
-        if S6St_Liq is not None:
-            S6St_Liq=S6St_Liq
+
 
 
         SCSS_Tot=calculate_SCSS_Total(SCSS=SCSS, S6St_Liq=S6St_Liq)
