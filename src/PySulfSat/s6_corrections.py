@@ -197,7 +197,7 @@ def calculate_S_Tot_Jugo2010(*, SCSS2=None,  SCAS=None,deltaQFM):
 
 
 def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_Liq=None,
-                                T_K=None, Fe3Fet_Liq=None, df=None, logfo2=None):
+                                T_K=None, Fe3Fet_Liq=None, df=None, logfo2=None, P_kbar=None):
     """
     Calculates the total amount of S accounting for the SCSS and SCAS
 
@@ -220,7 +220,13 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
         'Nash': Uses Nash et al. (2019) based on Fe3Fet_Liq and T_K
         'Jugo': Uses Jugo et al. (2010) Eq 10 based on DeltaQFM
         'Kleinsasser': Uses Kleinsasser et al. 2022 based on deltaQFM
-        'OM2022': Need to also enter your dataframe of liquid compositions.
+        'OM2022': ONeill and Mavrogenes (2022) - Need to also enter your dataframe of liquid compositions.
+        'BW2023': Boulling and Wood (2023) - Need to also enter your dataframe of liquid compositions.
+        'GW2026_1atm': Gorojovsky and wood, (2026) no P correction -  Need to also enter your dataframe of liquid compositions.
+        'GW2026_BW23': Gorojovsky and wood, (2026) with Boulling and Wood (2023) P correction -  Need to also enter your dataframe of liquid compositions.
+        'GW2026_MC25': Gorojovsky and wood, (2026) with Muth and Cottrell (2025) P correction -  Need to also enter your dataframe of liquid compositions.
+        'GW2026_TW26': Gorojovsky and wood, (2026) with Thomas and Wood (2026) P correction-  Need to also enter your dataframe of liquid compositions and P
+
 
     deltaQFM: int, float, panda.Series (for Jugo et al. 2010, or Kleinsasser et al. 2022)
 
@@ -231,6 +237,9 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
 
     T_K: int, float, panda.Series
         Temperature in Kelvin, needed if model='Nash'
+
+    P_kbar: int, float, panda.series
+        Only need for Gorojovsky and Wood (2026) pressure correction terms
 
     df: panda.DataFrame
         Option, needed for OM2022
@@ -254,7 +263,7 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
 
     else:
 
-        if model=='OM2022':
+        if model=='OM2022' or model =='BW2023' or 'GW2026' in model:
             if T_K is None:
                 raise TypeError('You need to specify a temp')
             if df is None:
@@ -262,13 +271,51 @@ def calculate_S_Total_SCSS_SCAS(*, SCSS, SCAS, deltaQFM=None,  model=None, S6St_
             if Fe3Fet_Liq is None and logfo2 is None:
                 raise TypeError('you need to input either Fe3Fet_Liq or logfo2')
             if Fe3Fet_Liq is not None:
-                calcS_OM2022_GivenFe3=calculate_OM2022_S6St(df=df, T_K=T_K,
+                if model=='OM2022':
+                    calcS=calculate_OM2022_S6St(df=df, T_K=T_K,
                             Fe3Fet_Liq=Fe3Fet_Liq)
-            if logfo2 is not None:
-                calcS_OM2022_GivenFe3=calculate_OM2022_S6St(df=df,
+                    S6St_Liq=calcS['S6St_Liq']
+
+                elif model=='BW2023':
+                    calcS=calculate_BW2022_OM2022_S6St(df=df, T_K=T_K, Fe3Fet_Liq=Fe3Fet_Liq)
+                    S6St_Liq=calcS['S6St_Liq']
+
+                elif 'GW2026' in model:
+                    calcS=calculate_GW2026_S6St(df=df, T_K=T_K, Fe3Fet_Liq=Fe3Fet_Liq, P_kbar=P_kbar)
+                    if '1atm' in model:
+                        S6St_Liq=calcS['S6St_1atm']
+                    elif 'BW23' in model:
+                        S6St_Liq=calcS['S6St_BW23']
+                    elif 'TW26' in model:
+                        S6St_Liq=calcS['S6St_TW26']
+                    elif 'MC25' in model:
+                        S6St_Liq=calcS['S6St_MC25']
+
+
+            elif logfo2 is not None:
+                if model=='OM2022':
+                    calcS=calculate_OM2022_S6St(df=df,
                         T_K=T_K,
                         logfo2=logfo2)
-            S6St_Liq=calcS_OM2022_GivenFe3['S6St_Liq']
+
+                    S6St_Liq=calcS['S6St_Liq']
+
+                elif model=='BW2023':
+                    calcS=calculate_BW2022_OM2022_S6St(df=df, T_K=T_K, logfo2=logfo2)
+                    S6St_Liq=calcS['S6St_Liq']
+
+                elif 'GW2026' in model:
+                    calcS=calculate_GW2026_S6St(df=df, T_K=T_K, P_kbar=P_kbar, logfo2=logfo2)
+                    if '1atm' in model:
+                        S6St_Liq=calcS['S6St_1atm']
+                    elif 'BW23' in model:
+                        S6St_Liq=calcS['S6St_BW23']
+                    elif 'TW26' in model:
+                        S6St_Liq=calcS['S6St_TW26']
+                    elif 'MC25' in model:
+                        S6St_Liq=calcS['S6St_MC25']
+
+
 
         if model =="Jugo":
             S6St_Liq=calculate_S6St_Jugo2010_eq10(deltaQFM=deltaQFM)
@@ -721,7 +768,7 @@ def calculate_GW2026_S6St(df, T_K, P_kbar, deltaQFM=None, logfo2=None, Fe3Fet_Li
     pd.DataFrame:
         1 atmosphere results (no pressure correction)
         LogCs2_1atm, LogCs6_1atm, logS6S2_1atm, S6St_1atm
-        Then pressure corrections for S6/St using BW23 (Boulling and Wood, 2023), TW26 (Thomas and Wood), and MC25 (Muth and Cottrell, 2025)
+        Then pressure corrections for S6/St using BW23 (Boulling and Wood, 2023), TW26 (Thomas and Wood, 2026), and MC25 (Muth and Cottrell, 2025)
 
 
     """

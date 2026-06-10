@@ -5,6 +5,10 @@ Documentation update only (Dec 18th, 2023)
 ================================
 PyMELTScalc renamed to PetThermoTools - updated examples.
 
+V 1.0.13 (June 10th, 2026)
+================================
+Implemented Gorojovsky and Wood (2026) for S6/St calcs
+
 Version 1.0.4 (Nov 11th, 2023)
 ================================
 Updated calibration datasets to read from csvs to get around issues with pandas 2 pkl compatability
