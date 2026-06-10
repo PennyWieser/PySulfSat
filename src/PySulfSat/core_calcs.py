@@ -14,6 +14,14 @@ PySulfSat_dir=Path(__file__).parent
 
 
 ## Anhydrous Molar masses, used for ONeill (2021). Doesnt include P2O5, Cr2O3 or H2O in the calculation.
+
+# Had to add in Cr, TiO2 is wrong, FeOT is wrong, MgO is wrong, P2O5 is whacky.
+oxide_mass_liq_gorosv = {'SiO2_Liq': 60.09, 'MgO_Liq': 40.32,
+'MnO_Liq': 70.9, 'FeOt_Liq': 71.85, 'CaO_Liq': 56.08,
+'Al2O3_Liq': 101.96, 'Na2O_Liq': 61.98, 'K2O_Liq': 94.2,
+'TiO2_Liq': 79.9,  'H2O_Liq': 18.04}
+
+
 oxide_mass_liq_anhyd = {'SiO2_Liq': 60.0843, 'MgO_Liq': 40.3044,
 'MnO_Liq': 70.9375, 'FeOt_Liq': 71.8464, 'CaO_Liq': 56.0774,
 'Al2O3_Liq': 101.961, 'Na2O_Liq': 61.9789, 'K2O_Liq': 94.196,
@@ -30,6 +38,21 @@ oxide_mass_liq_anhyd_df = pd.DataFrame.from_dict(
     oxide_mass_liq_anhyd, orient='index').T
 oxide_mass_liq_anhyd_df['Sample_ID_Liq'] = 'MolWt'
 oxide_mass_liq_anhyd_df.set_index('Sample_ID_Liq', inplace=True)
+
+
+oxygen_num_liq_gorosv = {
+    'SiO2_Liq': 2,
+    'MgO_Liq': 1,
+    'MnO_Liq': 1,
+    'FeOt_Liq': 1,
+    'CaO_Liq': 1,
+    'Al2O3_Liq': 3,
+    'Na2O_Liq': 1,
+    'K2O_Liq': 1,
+    'TiO2_Liq': 2,
+    'P2O5_Liq': 5,
+    'H2O_Liq': 1,
+}
 
 
 
@@ -69,7 +92,75 @@ cation_num_liq_hyd_df['Sample_ID_Liq'] = 'CatNum'
 cation_num_liq_hyd_df.set_index('Sample_ID_Liq', inplace=True)
 
 
-## With
+## With single oxygen basis for gorovsky.
+oxygen_num_liq_gorosv = {
+    'SiO2_Liq': 2,
+    'MgO_Liq': 1,
+    'MnO_Liq': 1,
+    'FeOt_Liq': 1,
+    'CaO_Liq': 1,
+    'Al2O3_Liq': 3,
+    'Na2O_Liq': 1,
+    'K2O_Liq': 1,
+    'TiO2_Liq': 2,
+    'H2O_Liq': 1
+}
+
+
+def calculate_single_oxygen_mol_fractions_gorosv(liq_comps, Fe3Fet_Liq):
+    """
+    Converts liquid oxide wt% to mole fractions on a single oxygen basis.
+    """
+
+    # only use oxides present in liq_comps
+    oxides_present = [
+        ox for ox in oxide_mass_liq_gorosv
+        if ox in liq_comps.columns
+    ]
+
+    mol_prop_1O = pd.DataFrame(index=liq_comps.index)
+
+    for ox in oxides_present:
+            mol_prop_1O[f"{ox}_mol_prop_1O"] = (
+                liq_comps[ox]
+                / (oxide_mass_liq_gorosv[ox] / oxygen_num_liq_gorosv[ox])
+            )
+
+
+    row_sum = mol_prop_1O.sum(axis='columns')
+
+    # split into redox
+
+    FeO_Liq_mol_prop_1O = (
+        liq_comps["FeOt_Liq"]
+        * (1 - Fe3Fet_Liq)
+        / (71.85 / 1)
+    )
+
+    # Fe3+ term, as Fe2O3
+    Fe2O3_Liq_mol_prop_1O = (
+        liq_comps["FeOt_Liq"]
+        * 1.111
+        * Fe3Fet_Liq
+        / (159.6 / 3)
+    )
+
+
+
+
+    mol_frac_1O = mol_prop_1O.div(row_sum, axis='rows')
+
+    mol_frac_1O.columns = [
+        col.replace('_mol_prop_1O', '_mol_frac_1O')
+        for col in mol_frac_1O.columns
+    ]
+
+    mol_frac_1O["FeO_Liq_mol_frac_1O"]=FeO_Liq_mol_prop_1O/row_sum
+
+    mol_frac_1O["Fe2O3_Liq_mol_frac_1O"]=Fe2O3_Liq_mol_prop_1O/row_sum
+
+
+    return mol_frac_1O
 
 
 

@@ -686,6 +686,189 @@ def calculate_fo2_QFM_buffers(logfo2=-8.52, T_K=1200, P_kbar=1):
 
     return df
 
+    ## Gorojovsky and Wood 2026
+def calculate_GW2026_S6St(df, T_K, P_kbar, deltaQFM=None, logfo2=None, Fe3Fet_Liq=None):
+
+    """
+    This function calculate S6/St and CS6 and CS2- using the model of Gorojovsky and Wood (2026), EPSL (10.1016/j.epsl.2026.120088)
+
+    Parameters
+    -----------
+    df: pandas Dataframe
+        input dataframe of liquid compositions with _Liq after each oxide
+
+
+    T_K: int, float, pd.series
+        Temperature in Kelvin
+
+    P_kbar: int, float, pd.series
+        Pressure in kbar
+
+    Then enter one of:
+
+
+    deltaQFM: int, float, pd.series
+        Offset from QFM buffer
+
+    logfo2: int, float, pd.series
+        logfo2 value (e.g. -10.01)
+
+    Fe3Fet_Liq:  int, float, pd.series
+        ratio of Fe3Fet_Liq in the melt
+
+    Returns
+    --------------
+    pd.DataFrame:
+        1 atmosphere results (no pressure correction)
+        LogCs2_1atm, LogCs6_1atm, logS6S2_1atm, S6St_1atm
+        Then pressure corrections for S6/St using BW23 (Boulling and Wood, 2023), TW26 (Thomas and Wood), and MC25 (Muth and Cottrell, 2025)
+
+
+    """
+    # Check users give at least one of the required inputs
+
+    # convert back to GPa for their equations
+    P_GPa=P_kbar/10
+
+    provided = [
+        deltaQFM is not None,
+        logfo2 is not None,
+        Fe3Fet_Liq is not None,
+    ]
+
+    if sum(provided) != 1:
+        raise ValueError(
+            "You must specify exactly one of "
+            "'deltaQFM', 'logfo2', or 'Fe3Fet_Liq'."
+        )
+
+    # They are going to need Thermobar, as presumably they only know one of logfo2, Fe3FeT or buffer position
+    try:
+        import Thermobar as pt
+
+    except ImportError:
+            raise ImportError(
+"This calculation assumes you only input one of Fe3Fet_Liq, logfo2/deltaQFM. But the calculations require both Fe3Fet_Liq and logfo2, so we use the Kress and Carmichael regime implemented within Thermobar. Thermobar is not "
+"currently installed on your machine.\n\n"
+"Please install Thermobar using:\n"
+"pip install Thermobar\n\n"
+"and then try again.")
+
+    # prepare it for Thermobar
+    liq_cols_Thermobar=pt.import_excel(df=df)['Liqs']
+
+    # If specify deltaQFM use frost to calculate logfo2
+    if deltaQFM is not None:
+        logfo2_use=-25096.3/(T_K)+8.735+0.11*(P_GPa*10000-1)/(T_K)+deltaQFM
+
+    # if specify logfo2, use that, duh
+    elif logfo2 is not None:
+        logfo2_use=logfo2
+        # now need to calculate Fe3Fet_Liq for the other calc
+
+
+    elif Fe3Fet_Liq is not None:
+        # implement KRESS AND CARMICHAEL HERE
+
+        redox=pt.convert_fe_partition_to_fo2(liq_comps=liq_cols_Thermobar,  T_K=T_K, P_kbar=P_kbar,  model="Kress1991", Fe3Fet_Liq=Fe3Fet_Liq, renorm=False)
+
+        logfo2_use=np.log10(redox['fo2_calc'])
+
+    # If they specify buffer or logfo2, they are going to need Fe3Fet_Liq for the calc of Cs2-
+    if Fe3Fet_Liq is None:
+        Fe3Fet_Liq=pt.convert_fo2_to_fe_partition(liq_comps=liq_cols_Thermobar, T_K=T_K, P_kbar=P_kbar, model="Kress1991", fo2=10**logfo2_use, renorm=False)['Fe3Fet_Liq']
+
+
+
+
+    # calculating mole fractions on a single oxygen basis
+
+    liq_comps=df.copy()
+
+    mol_frac_s_ox=calculate_single_oxygen_mol_fractions_gorosv(liq_comps, Fe3Fet_Liq)
+
+    # Calculating CS6 at 1 atmosphere
+    LogCS6_1atm=(195.99657+(-7632.6971*mol_frac_s_ox['SiO2_Liq_mol_frac_1O']
+                        -10669.7107*mol_frac_s_ox['TiO2_Liq_mol_frac_1O']
+                        -6900.9065*mol_frac_s_ox['Al2O3_Liq_mol_frac_1O']
+                        -4625.0612*mol_frac_s_ox['FeOt_Liq_mol_frac_1O']
+                        +19113.53*mol_frac_s_ox['MnO_Liq_mol_frac_1O']
+                        +11739.931*mol_frac_s_ox['CaO_Liq_mol_frac_1O']
+                        +33266.912*mol_frac_s_ox['Na2O_Liq_mol_frac_1O']
+                        -4094.9829)/T_K-57.2083*np.log10(T_K))
+
+
+
+
+    LogCs2_1atm = (
+    0.646657
+    + (
+        -3368.52 * mol_frac_s_ox['SiO2_Liq_mol_frac_1O']
+        -1233.439 * mol_frac_s_ox['Al2O3_Liq_mol_frac_1O']
+        +1295.54 * mol_frac_s_ox['CaO_Liq_mol_frac_1O']
+        +44885.3 * mol_frac_s_ox['K2O_Liq_mol_frac_1O']
+        +10914.48 * (
+            mol_frac_s_ox['SiO2_Liq_mol_frac_1O']
+            * mol_frac_s_ox['FeO_Liq_mol_frac_1O']
+        )
+        -225569.4 * (
+            mol_frac_s_ox['FeO_Liq_mol_frac_1O']
+            * mol_frac_s_ox['Na2O_Liq_mol_frac_1O']
+        )
+        -871863.8 * (
+            mol_frac_s_ox['FeO_Liq_mol_frac_1O']
+            * mol_frac_s_ox['K2O_Liq_mol_frac_1O']
+        )
+        +54392.37 * (
+            mol_frac_s_ox['FeO_Liq_mol_frac_1O']
+            * mol_frac_s_ox['Al2O3_Liq_mol_frac_1O']
+        )
+        -7584.703
+    ) / T_K
+    + 3.86057 * scipy.special.erf(
+        mol_frac_s_ox['FeO_Liq_mol_frac_1O']
+    )
+)
+
+    # calculating S6/ST at one atmosphere
+
+
+
+
+
+    logS6S2_1atm=LogCS6_1atm-LogCs2_1atm+2*logfo2_use
+
+    # ---------------------Equations with pressure terms -----------------------#
+    logS6S2_TW26=LogCS6_1atm-LogCs2_1atm+2*(logfo2_use-(0.0546*(P_GPa*10000)/(T_K)))
+    S6St_TW26=1-1/(1+10**logS6S2_TW26)
+
+    logS6S2_MC25=LogCS6_1atm-LogCs2_1atm+2*(logfo2_use-(0.0332*(P_GPa*10000)/(T_K)))
+    S6St_MC25=1-1/(1+10**logS6S2_MC25)
+
+    logS6S2_BW23=LogCS6_1atm-LogCs2_1atm+2*(logfo2_use-(0.0601*(P_GPa*10000)/(T_K)))
+    S6St_BW23=1-1/(1+10**logS6S2_BW23)
+
+
+
+    liq_comps.insert(0, 'LogCs2_1atm', LogCs2_1atm)
+    liq_comps.insert(1, 'LogCS6_1atm', LogCS6_1atm)
+    liq_comps.insert(2, 'logS6S2_1atm', logS6S2_1atm)
+    liq_comps.insert(3, 'S6St_1atm', (1-1/(1+10**logS6S2_1atm)))
+
+    # P terms
+    liq_comps.insert(4, 'logS6S2_TW26', logS6S2_TW26)
+    liq_comps.insert(5, 'S6St_TW26', S6St_TW26)
+
+    liq_comps.insert(6, 'logS6S2_MC25', logS6S2_MC25)
+    liq_comps.insert(7, 'S6St_MC25', S6St_MC25)
+
+    liq_comps.insert(8, 'logS6S2_BW23', logS6S2_BW23)
+    liq_comps.insert(9, 'S6St_BW23', S6St_BW23)
+    liq_comps.insert(10, 'logfo2_used', logfo2_use)
+
+    return liq_comps
+
+
 
 
 
