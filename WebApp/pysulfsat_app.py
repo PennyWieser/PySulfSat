@@ -19,6 +19,15 @@ st.set_page_config(page_title="PySulfSat", page_icon="🌋", initial_sidebar_sta
 
 HERE = Path(__file__).resolve().parent
 EXAMPLES = HERE.parent / "docs" / "Examples"
+
+# PySulfSat's PyPI release (setup.py package_data only lists *.pkl) leaves out Cali_datasets_CSV, so
+# return_cali_dataset fails when installed from PyPI. The deployed repository has the CSVs in src/PySulfSat,
+# so point PySulfSat there when its own copy is missing.
+import PySulfSat.cali_plots as _cali_plots
+if not (Path(_cali_plots.PySulfSat_dir) / "Cali_datasets_CSV").is_dir():
+    _repo_pkg = HERE.parent / "src" / "PySulfSat"
+    if (_repo_pkg / "Cali_datasets_CSV").is_dir():
+        _cali_plots.PySulfSat_dir = _repo_pkg
 MAX_ROWS = 50_000
 SAMPLE_COLS = ["Sample_ID_Liq", "Sample_ID", "Sample", "SampleID", "Sample Name", "Sample ID"]
 OXIDES = ["SiO2", "TiO2", "Al2O3", "FeOt", "MnO", "MgO", "CaO", "Na2O", "K2O", "P2O5", "H2O"]
