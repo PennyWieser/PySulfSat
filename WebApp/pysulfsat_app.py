@@ -28,6 +28,22 @@ if not (Path(_cali_plots.PySulfSat_dir) / "Cali_datasets_CSV").is_dir():
     _repo_pkg = HERE.parent / "src" / "PySulfSat"
     if (_repo_pkg / "Cali_datasets_CSV").is_dir():
         _cali_plots.PySulfSat_dir = _repo_pkg
+
+# PySulfSat 1.0.13 (PyPI) fails in calculate_S_Total_SCSS_SCAS when S6St_Liq is given without a model
+# ("'GW2026' in model" with model=None); fixed on GitHub after that release. Patch that one line if present.
+import inspect as _inspect
+import textwrap as _textwrap
+import PySulfSat.s6_corrections as _s6c
+try:
+    _src = _textwrap.dedent(_inspect.getsource(_s6c.calculate_S_Total_SCSS_SCAS))
+    _bad = "if model=='OM2022' or model =='BW2023' or 'GW2026' in model:"
+    if _bad in _src:
+        _ns = {}
+        exec(_src.replace(_bad, "if model is not None and (model=='OM2022' or model =='BW2023' or 'GW2026' in model):"),
+             _s6c.__dict__, _ns)
+        _s6c.calculate_S_Total_SCSS_SCAS = ss.calculate_S_Total_SCSS_SCAS = _ns["calculate_S_Total_SCSS_SCAS"]
+except (OSError, TypeError):
+    pass
 MAX_ROWS = 50_000
 SAMPLE_COLS = ["Sample_ID_Liq", "Sample_ID", "Sample", "SampleID", "Sample Name", "Sample ID"]
 OXIDES = ["SiO2", "TiO2", "Al2O3", "FeOt", "MnO", "MgO", "CaO", "Na2O", "K2O", "P2O5", "H2O"]
