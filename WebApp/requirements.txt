@@ -1,0 +1,5 @@
+PySulfSat==1.0.13
+Thermobar==1.0.73  # Gorojovsky and Wood (2026) S6+/ST uses Thermobar's Kress and Carmichael (1991) redox model
+streamlit>=1.64
+altair
+openpyxl
