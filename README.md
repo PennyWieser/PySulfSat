@@ -13,6 +13,9 @@ The paper is here: https://doi.org/10.30909/vol.06.01.107127
 If you have any issues with PySulfSat please raise an 'issue'. If you can attach your jupyter notebook and any associated files (spreadsheets), that makes it way easier to diagnose it. You can als
 email these to penny_wieser@berkeley.edu
 
+If you want to access PySulfSat through a webapp, try this!
+https://pysulfsat.streamlit.app/
+
 If you use PySulfSat in your paper, you must cite it (and you must also cite the original models you use):
 e.g.
 'calculations were performed in PySulfSat (Wieser and Gleeson 2023) using the SCSS model from Smythe et al. (2017), with an S6+ correction from Jugo et al. (2010).
