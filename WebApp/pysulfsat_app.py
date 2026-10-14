@@ -587,6 +587,17 @@ def to_excel(results, df_in):
     return buf.getvalue()
 
 
+def y_title(ys, plot_col):
+    """Axis title for the results plot: SCSS (ppm) or SCAS (ppm) when every series is one of those."""
+    if all(y.startswith("SCSS") for y in ys):
+        return "SCSS (ppm)"
+    if all(y.startswith("SCAS") for y in ys):
+        return "SCAS (ppm)"
+    if all(y.endswith(("ppm", "Tot")) or y.startswith(("SCSS", "SCAS", "Total")) for y in ys):
+        return "S (ppm)"
+    return plot_col
+
+
 def show_results(res, key, plot_col, msgs, printed, df_in, label):
     for m in msgs:
         st.warning(m)
@@ -619,7 +630,7 @@ def show_results(res, key, plot_col, msgs, printed, df_in, label):
                 long = res[[x] + ys].melt(x, var_name="Quantity", value_name="value")
                 base = alt.Chart(long).encode(
                     x=alt.X(f"{x}:Q", title=x.replace("_", " "), scale=alt.Scale(zero=False)),
-                    y=alt.Y("value:Q", title=("S (ppm)" if all(y.endswith(("ppm", "Tot")) for y in ys) else plot_col),
+                    y=alt.Y("value:Q", title=y_title(ys, plot_col),
                             scale=alt.Scale(zero=False)),
                     color=alt.Color("Quantity:N", legend=alt.Legend(title=None, orient="top")),
                     tooltip=[alt.Tooltip(f"{x}:Q", format=".3g"), "Quantity", alt.Tooltip("value:Q", format=".4g")])
@@ -648,60 +659,85 @@ def show_results(res, key, plot_col, msgs, printed, df_in, label):
             st.code("\n".join(printed), language=None)
 
 
+CALI_GROUPS = {"All SCSS calibration datasets": "SCSS: ", "All SCAS calibration datasets": "SCAS: ",
+               "All calibration datasets": ""}
+CALI_COLORS = ["#4c78a8", "#f58518", "#54a24b", "#b279a2", "#9d755d", "#72b7b2", "#eeca3b", "#ff9da6", "#79706e",
+               "#bab0ac"]
+
+
 def cali_page(df):
-    """Your compositions among a model's calibration experiments (PySulfSat's return_cali_dataset)."""
+    """Your compositions among models' calibration experiments (PySulfSat's return_cali_dataset)."""
     models = {f"SCSS: {k}": v["cali"] for k, v in SCSS_MODELS.items() if v.get("cali") and "eq. 12" not in k
               and v["cali"] != "O2021_SCSS"}  # O'Neill (2021): dataset not yet in PySulfSat
     models.update({f"SCAS: {k}": v["cali"] for k, v in SCAS_MODELS.items()})
     models.update({"S⁶⁺: O'Neill and Mavrogenes (2022), CS6": "O2022_CS6",
                    "S⁶⁺: Boulliung and Wood (2022), CS6": "BW2022_CS6"})
+    models = {k.replace(", eq. 11", ""): v for k, v in models.items()}
     with st.sidebar:
         st.header("Settings")
-        label = st.selectbox("Calibration dataset", [k.replace(", eq. 11", "") for k in models], key="cali_model")
-        model = {k.replace(", eq. 11", ""): v for k, v in models.items()}[label]
-    cali, _, _ = call(ss.return_cali_dataset, model=model)
+        label = st.selectbox("Calibration dataset", list(models) + list(CALI_GROUPS), key="cali_model")
+    chosen = [k for k in models if k.startswith(CALI_GROUPS[label])] if label in CALI_GROUPS else [label]
+    calis = {}
+    for k in chosen:
+        try:
+            c, _, _ = call(ss.return_cali_dataset, model=models[k])
+            calis[k] = c
+        except Exception as e:
+            st.warning(f"Could not load the {k} calibration dataset: {type(e).__name__}: {e}")
+    if not calis:
+        st.stop()
     numeric = lambda d: [c for c in d.columns if pd.api.types.is_numeric_dtype(d[c]) and not c.startswith("Unnamed")
                          and d[c].notna().any()]
-    shared = [c for c in numeric(cali) if df is None or c in numeric(df)]
+    in_any = sorted({c for d in calis.values() for c in numeric(d)})
+    shared = [c for c in in_any if df is None or c in numeric(df)]
     if not shared:
-        st.warning("Your data and this calibration dataset share no numeric columns to plot.")
+        st.warning("Your data and these calibration datasets share no numeric columns to plot.")
         st.stop()
     order = ["SiO2_Liq", "MgO_Liq", "FeOt_Liq", "Na2O_Liq", "K2O_Liq", "CaO_Liq", "Al2O3_Liq", "T_K", "P_kbar", "H2O_Liq"]
     shared = [c for c in order if c in shared] + [c for c in shared if c not in order]
     with st.sidebar:
         x = st.selectbox("x axis", shared, index=0, key="cali_x")
         y = st.selectbox("y axis", shared, index=min(2, len(shared) - 1), key="cali_y")
-    parts = [pd.DataFrame({"x": cali[x], "y": cali[y], "Dataset": f"{model} calibration",
-                           "Label": cali["Sample"].astype(str) if "Sample" in cali else ""})]
+    parts = []
+    for k, c in calis.items():
+        if x in c and y in c:
+            parts.append(pd.DataFrame({"x": c[x], "y": c[y], "Dataset": k.split(": ", 1)[1],
+                                       "Label": c["Sample"].astype(str) if "Sample" in c else ""}))
+    missing = [k for k, c in calis.items() if not (x in c and y in c)]
+    if missing:
+        st.caption(f"Not shown (no {x} or {y} column): {', '.join(missing)}.")
+    cali_names = [p["Dataset"].iloc[0] for p in parts if len(p)]
     if df is not None:
-        s = sample_col(df)
+        smp = sample_col(df)
         parts.append(pd.DataFrame({"x": df[x], "y": df[y], "Dataset": "Your data",
-                                   "Label": df[s].astype(str) if s else ""}))
+                                   "Label": df[smp].astype(str) if smp else ""}))
     long = pd.concat(parts).dropna(subset=["x", "y"])
-    dom = [f"{model} calibration"] + (["Your data"] if df is not None else [])
-    chart = alt.Chart(long).mark_point(filled=True, size=70, opacity=0.75).encode(
+    long["z"] = (long["Dataset"] == "Your data").astype(int)
+    dom = cali_names + (["Your data"] if df is not None else [])
+    single = len(cali_names) == 1
+    colors = (["#8c8c8c"] if single else (CALI_COLORS * 3)[:len(cali_names)]) + (["#d62728"] if df is not None else [])
+    shapes = ["circle"] * len(cali_names) + (["triangle-up"] if df is not None else [])
+    chart = alt.Chart(long).mark_point(filled=True, size=70 if single else 55, opacity=0.75 if single else 0.6).encode(
         x=alt.X("x:Q", title=x.replace("_", " "), scale=alt.Scale(zero=False)),
         y=alt.Y("y:Q", title=y.replace("_", " "), scale=alt.Scale(zero=False)),
-        color=alt.Color("Dataset:N", scale=alt.Scale(domain=dom, range=["#8c8c8c", "#d62728"][:len(dom)]),
-                        legend=alt.Legend(title=None, orient="top")),
-        shape=alt.Shape("Dataset:N", scale=alt.Scale(domain=dom, range=["circle", "triangle-up"][:len(dom)]),
-                        legend=alt.Legend(title=None, orient="top")),
+        color=alt.Color("Dataset:N", scale=alt.Scale(domain=dom, range=colors),
+                        legend=alt.Legend(title=None, orient="top", columns=3)),
+        shape=alt.Shape("Dataset:N", scale=alt.Scale(domain=dom, range=shapes), legend=None),
+        order=alt.Order("z:Q"),  # your data drawn on top
         tooltip=["Dataset", "Label", alt.Tooltip("x:Q", title=x, format=".4g"), alt.Tooltip("y:Q", title=y, format=".4g")])
-    st.header("Calibration dataset")
+    st.header("Calibration datasets" if len(calis) > 1 else "Calibration dataset")
+    m1, m2, _ = st.columns([1, 1, 2])
     if df is not None:
-        u = df[[x, y]].apply(pd.to_numeric, errors="coerce").dropna()
-        inside = u[x].between(cali[x].min(), cali[x].max()) & u[y].between(cali[y].min(), cali[y].max())
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Your analyses", f"{len(u):,}")
-        m2.metric("Calibration experiments", f"{cali[[x, y]].dropna().shape[0]:,}")
-        if len(u):
-            m3.metric("Inside calibration range", f"{inside.mean():.0%}",
-                      help="Share of your analyses whose x and y both fall within the calibration minimum to maximum.")
-    st.altair_chart(chart.properties(height=460).interactive(), width="stretch")
-    st.download_button("Download calibration dataset (CSV)", cali.to_csv(index=False).encode(),
-                       file_name=f"PySulfSat_{model}_calibration.csv", mime="text/csv")
-    with st.expander("Calibration dataset"):
-        st.dataframe(cali, hide_index=True)
+        m1.metric("Your analyses", f"{df[[x, y]].apply(pd.to_numeric, errors='coerce').dropna().shape[0]:,}")
+    m2.metric("Calibration experiments", f"{(long['Dataset'] != 'Your data').sum():,}")
+    st.altair_chart(chart.properties(height=480).interactive(), width="stretch")
+    all_cali = pd.concat([c.assign(Dataset=k) for k, c in calis.items()], ignore_index=True)
+    all_cali = all_cali[["Dataset"] + [c for c in all_cali.columns if c != "Dataset"]]
+    fname = "_".join(models[k] for k in calis) if len(calis) == 1 else label.replace(" ", "_")
+    st.download_button("Download calibration data (CSV)", all_cali.to_csv(index=False).encode(),
+                       file_name=f"PySulfSat_{fname}_calibration.csv", mime="text/csv")
+    with st.expander("Calibration data"):
+        st.dataframe(all_cali, hide_index=True)
 
 
 # %% ----------------------------------------------------------------
