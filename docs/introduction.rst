@@ -9,6 +9,11 @@ This tool is published in Volcanica - https://doi.org/10.30909/vol.06.01.107127
 Please make sure you cite PySulfSat if you use it, along with any of the underlying models you used.
 e.g. 'We calculate the SCSS using the model of Smythe et al. (2017) implemented in the open-source Python3 tool PySulfSat (Wieser and Gleeson, 2023)'
 
+There are numerous example notebooks on this read the docs page, or you can also use the Web App!
+
+https://pysulfsat.streamlit.app/
+
+
 ==============================
 Units
 ==============================
