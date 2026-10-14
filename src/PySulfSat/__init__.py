@@ -23,6 +23,7 @@ from PySulfSat.cali_plots import *
 from PySulfSat.mantle_melting import *
 from PySulfSat.monte_carlo_s_in_sulf_recon import *
 from PySulfSat.error_prop import *
+from PySulfSat.allmodels import *
 
 
 # version

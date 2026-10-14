@@ -92,6 +92,8 @@ S6_MODELS = {
     "Gorojovsky and Wood (2026), P after Thomas and Wood (2026)": dict(redox=["logfo2", "Fe3", "dQFM"],
                                                                        needs_df=True, col="S6St_TW26"),
 }
+FROM_FO2 = "Calculate from log fO₂ column"
+FROM_FE3 = "Calculate from Fe³⁺/ΣFe (Kress and Carmichael 1991)"
 REDOX_LABEL = {"Fe3": "Fe³⁺/ΣFe", "logfo2": "log₁₀ fO₂", "dQFM": "ΔQFM (Frost 1991)"}
 
 # Inputs that can be a single value or a column: label, default value, likely column names, step
@@ -172,8 +174,29 @@ def ask(kind, cols, key, prefer_file=True, help=None):
     label, value, guess, step = PARAMS[kind]
     found = next((c for c in guess if c in cols), None)
     opts = ["Column in file", "Single value"] if cols else ["Single value"]
-    src = st.radio(label, opts, index=0 if (found and prefer_file) else (1 if len(opts) > 1 else 0),
-                   horizontal=True, key=f"{key}_src", help=help)
+    fo2_found = next((c for c in PARAMS["logfo2"][2] if c in cols), None)
+    fe3_found = next((c for c in PARAMS["Fe3"][2] if c in cols), None)
+    if kind in ("dQFM", "logfo2") and HAS_THERMOBAR:
+        opts = opts[:-1] + ([FROM_FO2] if kind == "dQFM" and cols else []) + [FROM_FE3, "Single value"]
+    index = opts.index("Column in file") if (found and prefer_file) else \
+        opts.index(FROM_FO2) if (FROM_FO2 in opts and fo2_found) else opts.index("Single value")
+    src = st.radio(label, opts, index=index, horizontal=len(opts) < 3, key=f"{key}_src", help=help)
+    if src == FROM_FE3:
+        st.caption("log₁₀ fO₂ from Fe³⁺/ΣFe and the melt composition with Kress and Carmichael (1991), via "
+                   "Thermobar's convert_fe_partition_to_fo2" + (" (ΔQFM relative to Frost 1991)" if kind == "dQFM" else "")
+                   + ", at this Fe³⁺/ΣFe, temperature and pressure:")
+        fe3 = ask("Fe3", cols, f"{key}_kcfe3")
+        T = ask("T", cols, f"{key}_kcT")
+        P = ask("P", cols, f"{key}_kcP")
+        return ("fe3", fe3, T, P, kind)
+    if src == FROM_FO2:
+        fcol = st.selectbox("log₁₀ fO₂ column", cols, index=cols.index(fo2_found) if fo2_found else 0,
+                            key=f"{key}_fo2col", help="log₁₀ fO₂ in bars, e.g. Lg(fO2) from Petrolog3.")
+        st.caption("Converted to ΔQFM with Thermobar's convert_fo2_to_buffer, at this temperature and pressure:")
+        T = ask("T", cols, f"{key}_fo2T")
+        P = ask("P", cols, f"{key}_fo2P")
+        buf = st.radio("QFM buffer", ["Frost (1991)", "O'Neill (1987)"], horizontal=True, key=f"{key}_fo2buf")
+        return ("fo2", fcol, T, P, buf)
     if src == "Single value":
         if kind == "T":
             unit = st.radio("Units", ["°C", "K"], horizontal=True, key=f"{key}_unit", label_visibility="collapsed")
@@ -195,9 +218,42 @@ def resolve(value, df):
     """Turns ask()'s answer into a float or a Series aligned with df (temperatures in K)."""
     if not isinstance(value, tuple):
         return value
+    if value[0] == "fo2":
+        return fo2_to_dqfm(value, df)
+    if value[0] == "fe3":
+        return fe3_to_redox(value, df)
     col, unit = value
     s = pd.to_numeric(df[col], errors="coerce").reset_index(drop=True)
     return s + 273.15 if unit == "°C" else s
+
+
+def fo2_to_dqfm(value, df):
+    """ΔQFM from a log10 fO2 column, with Thermobar's convert_fo2_to_buffer (Frost 1991 or O'Neill 1987 QFM)."""
+    import Thermobar as pt
+    _, fcol, T, P, buf = value
+    n = len(df)
+    logfo2 = pd.to_numeric(df[fcol], errors="coerce").reset_index(drop=True)
+    with warnings.catch_warnings(), contextlib.redirect_stdout(io.StringIO()):
+        warnings.simplefilter("ignore")
+        out = pt.convert_fo2_to_buffer(fo2=10 ** logfo2, T_K=series(resolve(T, df), n), P_kbar=series(resolve(P, df), n))
+    return out["DeltaQFM_Frost1991" if buf.startswith("Frost") else "DeltaQFM_ONeill1987"].reset_index(drop=True)
+
+
+def fe3_to_redox(value, df):
+    """log10 fO2 (or ΔQFM, Frost 1991) from Fe3+/ΣFe with Kress and Carmichael (1991), via Thermobar."""
+    import Thermobar as pt
+    _, fe3, T, P, kind = value
+    n = len(df)
+    liq = df.reset_index(drop=True)
+    liq = liq[[c for c in liq.columns if c.endswith("_Liq") and c not in ("FeO_Liq", "Fe2O3_Liq", "Fe3Fet_Liq")]]
+    liq = liq.apply(pd.to_numeric, errors="coerce")
+    with warnings.catch_warnings(), contextlib.redirect_stdout(io.StringIO()):
+        warnings.simplefilter("ignore")
+        out = pt.convert_fe_partition_to_fo2(liq_comps=liq, T_K=series(resolve(T, df), n),
+                                             P_kbar=series(resolve(P, df), n), model="Kress1991",
+                                             Fe3Fet_Liq=series(resolve(fe3, df), n))
+    res = out["DeltaQFM_Frost1991"] if kind == "dQFM" else np.log10(out["fo2_calc"].astype(float))
+    return pd.Series(np.asarray(res, dtype=float))
 
 
 def series(x, n):
@@ -249,11 +305,14 @@ def s6_form(cols, key, allow=("value",), kleinsasser=False):
     spec = S6_MODELS[choice]
     redox = st.selectbox("Redox given as", spec["redox"], format_func=REDOX_LABEL.get, key=f"{key}_redox") \
         if len(spec["redox"]) > 1 else spec["redox"][0]
-    r = ask(redox, cols, f"{key}_r")
+    r = ask(redox, cols, f"{key}_r_{redox}")  # separate keys, so a Fe3+ column choice isn't reused for ΔQFM
+
+    used = {}
 
     def s6(df, T, P):
         n = len(df)
         rv = series(resolve(r, df), n)
+        used[{"Fe3": "Fe3Fet_Liq_used", "logfo2": "logfo2_used", "dQFM": "DeltaQFM_used"}[redox]] = rv
         red = {"Fe3": dict(Fe3Fet_Liq=rv), "logfo2": dict(logfo2=rv), "dQFM": dict(deltaQFM=rv)}[redox]
         if choice.startswith("Nash"):
             out, _, _ = call(ss.calculate_S6St_Nash2019, T_K=series(T, n), **red)
@@ -269,14 +328,21 @@ def s6_form(cols, key, allow=("value",), kleinsasser=False):
             return series(out["S6St_Liq"], n)
         out, _, _ = call(ss.calculate_GW2026_S6St, df=df, T_K=series(T, n), P_kbar=series(P, n), **red)
         return series(out[spec["col"]], n)
-    return choice, s6, {}
+    return choice, s6, {"used": used}
 
 
 # %% ----------------------------------------------------------------
 # calculations: each settings form returns a job(df) -> (results, key columns, plotted column, warnings)
 
+ALL_MODELS = "All models"
+
+
 def form_scss(cols):
-    name = st.selectbox("SCSS model", list(SCSS_MODELS), key="scss_model")
+    names = list(SCSS_MODELS) + ([ALL_MODELS] if hasattr(ss, "calculate_all_SCSS") else [])
+    name = st.selectbox("SCSS model", names, key="scss_model",
+                        help=None if ALL_MODELS in names else "All models needs a newer PySulfSat (calculate_all_SCSS).")
+    if name == ALL_MODELS:
+        return form_scss_all(cols)
     spec = SCSS_MODELS[name]
     st.markdown("**Conditions**")
     T, P = ask("T", cols, "scss_T"), ask("P", cols, "scss_P")
@@ -323,8 +389,77 @@ def form_scss(cols):
     return job, f"{name}" + (f"; S⁶⁺ correction: {s6_label}" if s6 is not None else "")
 
 
+def form_scss_all(cols):
+    st.caption("Runs every SCSS model with the same inputs (calculate_all_SCSS). A model that can't run with "
+               "these inputs is left blank, with a warning.")
+    st.markdown("**Conditions**")
+    T, P = ask("T", cols, "scss_T"), ask("P", cols, "scss_P")
+    H2O = ask("H2O", cols, "scss_H2O", help="Used by the models that include H₂O; overrides any H2O_Liq column.")
+    Fe3 = ask("Fe3", cols, "scss_Fe3", help="Only Fe²⁺ enters the SCSS calculation (not used by Fortin et al. 2015).")
+    tr = st.radio("Li and Zhang (2022) temperature dependence", ["With the 1200 °C transition", "High-T form throughout",
+                                                               "Low-T form throughout"], key="scss_lz")
+    lz = dict(T_K_transition=tr.startswith("With"), highT=tr.startswith("High"), lowT=tr.startswith("Low"))
+    st.markdown("**Sulfide**")
+    sulf = sulfide_form(cols, "scss_sulf")
+    st.markdown("**S⁶⁺ correction**")
+    s6_label, s6, _ = s6_form(cols, "scss", allow=("none", "value"))
+
+    def job(df):
+        n = len(df)
+        t, p = series(resolve(T, df), n), series(resolve(P, df), n)
+        out, msgs, printed = call(ss.calculate_all_SCSS, df=df, T_K=t, P_kbar=p, H2O_Liq=resolve(H2O, df),
+                                  Fe3Fet_Liq=resolve(Fe3, df), quiet=True, **lz, **sulf(df))
+        out = out.reset_index(drop=True)
+        models = [c for c in out.columns if c.startswith(("SCSS2_ppm_", "SCSS_Tot_"))]
+        key = list(models)
+        if s6 is not None:
+            s6v = s6(df, t, p)
+            added = {"S6St_Liq": s6v.values}
+            for c in models:
+                if c.startswith("SCSS2_ppm_"):  # Li and Zhang (2022) already gives total S
+                    tot, _, _ = call(ss.calculate_SCSS_Total, SCSS=out[c], S6St_Liq=s6v)
+                    added[c.replace("SCSS2_ppm_", "SCSS_Tot_ppm_")] = np.asarray(tot, dtype=float)
+            out = pd.concat([out[models], pd.DataFrame(added), out.drop(columns=models)], axis=1)
+            key += list(added)
+        plot = next((c for c in key if c.startswith("SCSS") and out[c].notna().any()), key[0])
+        return out, key, plot, msgs, printed
+    return job, "All SCSS models" + (f"; S⁶⁺ correction: {s6_label}" if s6 is not None else "")
+
+
+def form_scas_all(cols):
+    st.caption("Runs every SCAS model with the same inputs (calculate_all_SCAS).")
+    st.markdown("**Conditions**")
+    T = ask("T", cols, "scas_T")
+    H2O = ask("H2O", cols, "scas_H2O", help="Overrides any H2O_Liq column.")
+    st.markdown("**S²⁻ correction**")
+    s6_label, s6, _ = s6_form(cols, "scas", allow=("none", "value"))
+    P = ask("P", cols, "scas_P") if s6_label.startswith("Gorojovsky") else 1.0
+
+    def job(df):
+        n = len(df)
+        t = series(resolve(T, df), n)
+        out, msgs, printed = call(ss.calculate_all_SCAS, df=df, T_K=t, H2O_Liq=resolve(H2O, df), quiet=True)
+        out = out.reset_index(drop=True)
+        models = [c for c in out.columns if c.startswith("SCAS6_ppm_")]
+        key = list(models)
+        if s6 is not None:
+            s6v = s6(df, t, series(resolve(P, df), n))
+            added = {"S6St_Liq": s6v.values}
+            for c in models:
+                tot, _, _ = call(ss.calculate_SCAS_Total, SCAS=out[c], S6St_Liq=s6v)
+                added[c.replace("SCAS6_ppm_", "SCAS_Tot_ppm_")] = np.asarray(tot, dtype=float)
+            out = pd.concat([out[models], pd.DataFrame(added), out.drop(columns=models)], axis=1)
+            key += list(added)
+        plot = next((c for c in key if c.startswith("SCAS") and out[c].notna().any()), key[0])
+        return out, key, plot, msgs, printed
+    return job, "All SCAS models" + (f"; S²⁻ correction: {s6_label}" if s6 is not None else "")
+
+
 def form_scas(cols):
-    name = st.selectbox("SCAS model", list(SCAS_MODELS), key="scas_model")
+    names = list(SCAS_MODELS) + ([ALL_MODELS] if hasattr(ss, "calculate_all_SCAS") else [])
+    name = st.selectbox("SCAS model", names, key="scas_model")
+    if name == ALL_MODELS:
+        return form_scas_all(cols)
     st.markdown("**Conditions**")
     T = ask("T", cols, "scas_T")
     H2O = ask("H2O", cols, "scas_H2O", help="Overrides any H2O_Liq column.")
@@ -390,7 +525,7 @@ def form_total(cols):
 
 def form_s6(cols):
     st.markdown("**Model and conditions**")
-    s6_label, s6, _ = s6_form(cols, "s6", allow=())
+    s6_label, s6, extra = s6_form(cols, "s6", allow=())
     needs_T = not s6_label.startswith("Jugo")
     T = ask("T", cols, "s6_T") if needs_T else 1473.15
     P = ask("P", cols, "s6_P") if s6_label.startswith("Gorojovsky") else 1.0
@@ -401,7 +536,11 @@ def form_s6(cols):
         out = df.reset_index(drop=True).copy()
         out.insert(0, "S6St_Liq", v.values)
         out.insert(1, "S2St_Liq", 1 - v.values)
-        return out, ["S6St_Liq", "S2St_Liq"], "S6St_Liq", [], ""
+        key = ["S6St_Liq", "S2St_Liq"]
+        for i, (c, vals) in enumerate(extra.get("used", {}).items()):  # the redox state used, e.g. ΔQFM from fO2
+            out.insert(2 + i, c, vals.values)
+            key.append(c)
+        return out, key, "S6St_Liq", [], ""
     return job, s6_label
 
 
@@ -587,10 +726,18 @@ with st.sidebar:
                                 "Petrolog3: the Excel output. MELTS: a liquid .tbl file.")
         types = {"Spreadsheet": ["csv", "xlsx", "xls"], "Petrolog3 output": ["xlsx", "xls"],
                  "MELTS .tbl file": ["tbl", "txt"]}[fmt]
-        up = st.file_uploader("File", type=types)
+        def _upload_changed():  # only fires when the user adds, replaces or removes the file
+            f = st.session_state.get("upload_file")
+            st.session_state["upload_kept"] = (f.getvalue(), f.name) if f is not None else None
+
+        up = st.file_uploader("File", type=types, key="upload_file", on_change=_upload_changed)
         if up is not None:
-            data, name = up.getvalue(), up.name
-            if fmt != "MELTS .tbl file" and not name.lower().endswith(".csv"):
+            st.session_state["upload_kept"] = (up.getvalue(), up.name)
+        kept = st.session_state.get("upload_kept")
+        if kept is not None and Path(kept[1]).suffix.lower().lstrip(".") in types:
+            # Keep using the file for the rest of the session even if the uploader comes back empty on a rerun
+            data, name = kept
+            if fmt == "Spreadsheet" and not name.lower().endswith(".csv"):  # Petrolog3: PySulfSat reads its own sheet
                 sheets = pd.ExcelFile(io.BytesIO(data)).sheet_names
                 sheet = st.selectbox("Sheet", sheets) if len(sheets) > 1 else sheets[0]
 
